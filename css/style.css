@@ -1,0 +1,234 @@
+/* Custom style for IPMC Employee Management System */
+:root {
+    --ipmc-primary: #0a3d62; /* IPMC Professional Deep Blue */
+    --ipmc-secondary: #3c6382; /* Muted Slate Blue */
+    --ipmc-accent: #f6b93b; /* Academic Gold / Yellow Accent */
+    --ipmc-dark: #1e272e;
+    --ipmc-light: #f8f9fa;
+    --ipmc-sidebar-width: 250px;
+    --ipmc-transition: all 0.3s ease;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f5f6fa;
+    color: var(--ipmc-dark);
+    min-height: 100vh;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    width: var(--ipmc-sidebar-width);
+    min-width: var(--ipmc-sidebar-width);
+    background: linear-gradient(135deg, var(--ipmc-primary) 0%, #062b46 100%);
+    color: #fff;
+    min-height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    transition: var(--ipmc-transition);
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+}
+
+#sidebar .sidebar-header {
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+#sidebar .sidebar-header h4 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+#sidebar .nav-link {
+    color: rgba(255,255,255,0.75);
+    padding: 0.85rem 1.5rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 0;
+    border-left: 4px solid transparent;
+    transition: var(--ipmc-transition);
+}
+
+#sidebar .nav-link i {
+    font-size: 1.1rem;
+    margin-right: 12px;
+    width: 24px;
+    text-align: center;
+}
+
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left-color: var(--ipmc-accent);
+}
+
+/* Content Area Layout */
+#content {
+    margin-left: var(--ipmc-sidebar-width);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: var(--ipmc-transition);
+}
+
+/* Top Navbar Styling */
+.top-navbar {
+    background-color: #fff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.85rem 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* Dashboard Summary Cards */
+.card-stat {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.card-stat:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+}
+
+.card-stat .card-body {
+    padding: 1.5rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    font-weight: 700;
+}
+
+/* Professional Tables */
+.table-responsive {
+    border-radius: 12px;
+    background-color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.table {
+    margin: 0;
+}
+
+.table th {
+    background-color: var(--ipmc-light);
+    color: var(--ipmc-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table td {
+    padding: 1rem 1.25rem;
+    vertical-align: middle;
+}
+
+/* Custom Buttons and Alerts */
+.btn-ipmc {
+    background-color: var(--ipmc-primary);
+    color: #fff;
+    border: none;
+    font-weight: 500;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    transition: var(--ipmc-transition);
+}
+
+.btn-ipmc:hover,
+.btn-ipmc:focus {
+    background-color: #062b46;
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(10, 61, 98, 0.2);
+}
+
+.btn-accent {
+    background-color: var(--ipmc-accent);
+    color: var(--ipmc-dark);
+    font-weight: 600;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    border-radius: 6px;
+    transition: var(--ipmc-transition);
+}
+
+.btn-accent:hover {
+    background-color: #e5a92a;
+    color: var(--ipmc-dark);
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--ipmc-primary);
+    box-shadow: 0 0 0 3px rgba(10, 61, 98, 0.15);
+}
+
+/* Profile Photo Card */
+.profile-photo-wrapper {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin: 0 auto 1rem;
+}
+
+.profile-photo-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Badges styling */
+.badge-status {
+    padding: 0.45em 0.85em;
+    border-radius: 50rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 991.98px) {
+    #sidebar {
+        margin-left: calc(-1 * var(--ipmc-sidebar-width));
+    }
+    #sidebar.show {
+        margin-left: 0;
+    }
+    #content {
+        margin-left: 0;
+    }
+    .top-navbar {
+        padding: 0.85rem 1rem;
+    }
+}
