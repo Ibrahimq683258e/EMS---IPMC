@@ -77,7 +77,7 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Left Column: Department List -->
     <div class="col-12 col-lg-8 mb-4">
-        <div class="card border-0 shadow-sm bg-white p-4 h-100">
+        <div class="card border-0 shadow-sm bg-white p-3 p-md-4 h-100">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-building-user text-primary me-2"></i> Institutional Departments</h5>
 
             <?php if (empty($departments)): ?>
@@ -132,7 +132,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Right Column: Form (Contextual - Add or Edit) -->
     <div class="col-12 col-lg-4 mb-4">
-        <div class="card border-0 shadow-sm bg-white p-4 h-100" id="formContainer">
+        <div class="card border-0 shadow-sm bg-white p-3 p-md-4 h-100" id="formContainer">
             <h5 class="fw-bold mb-3 text-dark" id="formTitle"><i class="fa-solid fa-plus-circle text-success me-2"></i> Add New Department</h5>
 
             <?php if (!empty($error)): ?>

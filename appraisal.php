@@ -60,7 +60,7 @@ include_once __DIR__ . '/includes/header.php';
     <!-- Left Column: Submit Appraisal Rating (Admin / HR only) -->
     <?php if (isAdmin() || isHR()): ?>
         <div class="col-12 col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm p-4 bg-white">
+            <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
                 <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-star-half-stroke text-warning me-2"></i> Submit New Appraisal</h5>
 
                 <?php if (!empty($error)): ?>
@@ -125,7 +125,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Right Column: Appraisal History -->
     <div class="col-12 <?php echo (isAdmin() || isHR()) ? 'col-lg-8' : ''; ?> mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white h-100">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-list-check text-primary me-2"></i> Performance Appraisals History</h5>
 
             <?php if (empty($appraisals)): ?>

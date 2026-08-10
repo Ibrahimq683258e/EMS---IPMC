@@ -32,10 +32,10 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Filter Toolbar -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white">
-            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-2">
                 <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-filter text-primary me-2"></i> Filter & Search Staff</h5>
-                <a href="employee-add.php" class="btn btn-ipmc"><i class="fa-solid fa-user-plus me-1"></i> Add New Employee</a>
+                <a href="employee-add.php" class="btn btn-ipmc btn-submit-mobile"><i class="fa-solid fa-user-plus me-1"></i> Add New Employee</a>
             </div>
 
             <form method="GET" action="employees.php" class="row g-3">

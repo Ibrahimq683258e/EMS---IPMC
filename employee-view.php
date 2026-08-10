@@ -40,7 +40,7 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Profile Left: Quick Stats Card -->
     <div class="col-12 col-lg-4 mb-4">
-        <div class="card border-0 shadow-sm text-center p-4 bg-white h-100">
+        <div class="card border-0 shadow-sm text-center p-3 p-md-4 bg-white h-100">
             <div class="profile-photo-wrapper">
                 <img src="<?php echo !empty($employee['photo']) && file_exists($employee['photo']) ? $employee['photo'] : 'uploads/default.png'; ?>" alt="Profile Photo">
             </div>
@@ -87,7 +87,7 @@ include_once __DIR__ . '/includes/header.php';
 
             <?php if (isAdmin() || isHR()): ?>
                 <div class="d-grid gap-2 mt-4">
-                    <a href="employee-edit.php?id=<?php echo $employee['id']; ?>" class="btn btn-warning text-dark fw-bold btn-sm">
+                    <a href="employee-edit.php?id=<?php echo $employee['id']; ?>" class="btn btn-warning btn-submit-mobile text-dark fw-bold btn-sm">
                         <i class="fa-solid fa-user-pen me-1"></i> Edit Profile
                     </a>
                 </div>
@@ -98,7 +98,7 @@ include_once __DIR__ . '/includes/header.php';
     <!-- Profile Right: Leaves, Appraisals & Logs -->
     <div class="col-12 col-lg-8">
         <!-- Leave Balances -->
-        <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 bg-white">
             <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-hourglass-start text-primary me-2"></i> Leave Allotments & Balances</h5>
             <div class="row">
                 <?php if (empty($leaveBalances)): ?>
@@ -121,11 +121,11 @@ include_once __DIR__ . '/includes/header.php';
         </div>
 
         <!-- Performance Appraisal History -->
-        <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
-            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 bg-white">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 border-bottom pb-2">
                 <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-star text-warning me-2"></i> Performance Appraisals</h5>
                 <?php if (isAdmin() || isHR()): ?>
-                    <a href="appraisal.php?employee_id=<?php echo $employee['id']; ?>" class="btn btn-sm btn-outline-primary fw-semibold"><i class="fa-solid fa-plus me-1"></i> Add Rating</a>
+                    <a href="appraisal.php?employee_id=<?php echo $employee['id']; ?>" class="btn btn-sm btn-outline-primary btn-submit-mobile fw-semibold"><i class="fa-solid fa-plus me-1"></i> Add Rating</a>
                 <?php endif; ?>
             </div>
             <?php if (empty($appraisals)): ?>
@@ -166,7 +166,7 @@ include_once __DIR__ . '/includes/header.php';
         </div>
 
         <!-- Recent Attendance Logs -->
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
             <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-clipboard-user text-success me-2"></i> Recent Attendance (Last 30 Days)</h5>
             <?php if (empty($attendanceLogs)): ?>
                 <div class="text-center py-4 text-muted">No attendance logs in the last 30 days.</div>

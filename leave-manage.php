@@ -53,7 +53,7 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Filter Bar -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-filter text-primary me-2"></i> Filter Requests</h5>
             <form method="GET" action="leave-manage.php" class="row g-3">
                 <div class="col-12 col-sm-6 col-md-4">
@@ -98,7 +98,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Leave Requests Listing -->
     <div class="col-12">
-        <div class="card border-0 shadow-sm bg-white">
+        <div class="card border-0 shadow-sm bg-white p-1">
             <div class="card-body p-0">
                 <?php if (empty($leaves)): ?>
                     <div class="text-center py-5">

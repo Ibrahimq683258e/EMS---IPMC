@@ -64,14 +64,14 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Reports Selector Toolbar -->
     <div class="col-12 mb-4 d-print-none">
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div>
                     <h5 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Report Generator</h5>
                     <p class="text-muted small mb-0">Select and filter the required parameters before exporting/printing your report.</p>
                 </div>
                 <div>
-                    <button class="btn btn-ipmc px-4" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Print / Export PDF</button>
+                    <button class="btn btn-ipmc btn-submit-mobile px-4" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Print / Export PDF</button>
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Department Summary Section -->
     <div class="col-12 col-xl-6 mb-4">
-        <div class="card border-0 shadow-sm bg-white h-100">
+        <div class="card border-0 shadow-sm bg-white h-100 p-1">
             <div class="card-header bg-light border-0 py-3">
                 <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-building text-primary me-2"></i> Departments Staff Summary</h5>
             </div>
@@ -110,11 +110,11 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Active Staff Types Summary -->
     <div class="col-12 col-xl-6 mb-4">
-        <div class="card border-0 shadow-sm bg-white h-100">
+        <div class="card border-0 shadow-sm bg-white h-100 p-1">
             <div class="card-header bg-light border-0 py-3">
                 <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-users text-success me-2"></i> Institutional Staff Breakdown</h5>
             </div>
-            <div class="card-body p-4">
+            <div class="card-body p-3 p-md-4">
                 <div class="row text-center">
                     <?php
                     $academicCount = 0;
@@ -164,12 +164,12 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Leaves Report Summary -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm bg-white">
+        <div class="card border-0 shadow-sm bg-white p-1">
             <div class="card-header bg-light border-0 py-3">
                 <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-calendar-check text-warning me-2"></i> Campus Leaves Summary</h5>
             </div>
             <div class="card-body p-0">
-                <div class="p-4 bg-light border-bottom">
+                <div class="p-3 p-md-4 bg-light border-bottom">
                     <div class="row text-center">
                         <div class="col-4 border-end">
                             <h6 class="text-secondary font-weight-medium">Approved Leaves</h6>
@@ -231,7 +231,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Attendance Date-Range Filter Report -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm bg-white">
+        <div class="card border-0 shadow-sm bg-white p-1">
             <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clipboard-user text-info me-2"></i> Attendance Date-Range Summary</h5>
                 <form class="row g-2 d-print-none align-items-center m-0">

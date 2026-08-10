@@ -47,7 +47,7 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Filters Toolbar -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-filter text-primary me-2"></i> Filter Logs & Generate Reports</h5>
 
             <form method="GET" action="attendance-report.php" class="row g-3">
@@ -98,10 +98,10 @@ include_once __DIR__ . '/includes/header.php';
                     </div>
                 <?php endif; ?>
 
-                <div class="col-12 d-flex justify-content-end gap-2 mt-4">
-                    <a href="attendance-report.php" class="btn btn-light border"><i class="fa-solid fa-arrow-rotate-left"></i> Reset</a>
-                    <button type="submit" class="btn btn-ipmc"><i class="fa-solid fa-magnifying-glass me-1"></i> Apply Filters</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Print Report</button>
+                <div class="col-12 d-flex justify-content-end flex-wrap gap-2 mt-4">
+                    <a href="attendance-report.php" class="btn btn-light border btn-submit-mobile"><i class="fa-solid fa-arrow-rotate-left"></i> Reset</a>
+                    <button type="submit" class="btn btn-ipmc btn-submit-mobile"><i class="fa-solid fa-magnifying-glass me-1"></i> Apply Filters</button>
+                    <button type="button" class="btn btn-outline-secondary btn-submit-mobile" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Print Report</button>
                 </div>
             </form>
         </div>

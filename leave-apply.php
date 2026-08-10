@@ -48,7 +48,7 @@ include_once __DIR__ . '/includes/header.php';
     <!-- Left Column: Application Form & Balances -->
     <div class="col-12 col-lg-5 mb-4">
         <!-- Balances Summary -->
-        <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 bg-white">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-hourglass-start text-primary me-2"></i> My Leave Balances</h5>
             <div class="row g-2">
                 <?php if (empty($balances)): ?>
@@ -68,7 +68,7 @@ include_once __DIR__ . '/includes/header.php';
         </div>
 
         <!-- Submit Leave Request -->
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-calendar-plus text-success me-2"></i> Submit Leave Request</h5>
 
             <?php if (!empty($error)): ?>
@@ -119,7 +119,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Right Column: Leave Application History -->
     <div class="col-12 col-lg-7 mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white h-100">
             <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i> Leave Request History</h5>
 
             <?php if (empty($history)): ?>

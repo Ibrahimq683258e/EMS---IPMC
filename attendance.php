@@ -63,7 +63,7 @@ include_once __DIR__ . '/includes/header.php';
 <div class="row">
     <!-- Date selector toolbar -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
             <form method="GET" action="attendance.php" class="row g-3 align-items-center">
                 <div class="col-12 col-md-4">
                     <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clipboard-user text-primary me-2"></i> Attendance Log</h5>
@@ -96,7 +96,7 @@ include_once __DIR__ . '/includes/header.php';
         <form method="POST" action="attendance.php?date=<?php echo urlencode($selected_date); ?>">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
 
-            <div class="card border-0 shadow-sm bg-white mb-4">
+            <div class="card border-0 shadow-sm bg-white mb-4 p-1">
                 <div class="card-body p-0">
                     <?php if (empty($records)): ?>
                         <div class="text-center py-5 text-muted">

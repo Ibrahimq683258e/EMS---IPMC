@@ -47,13 +47,13 @@ include_once __DIR__ . '/includes/header.php';
 <!-- Role-Based Dashboard Wrapper -->
 <div class="row">
     <div class="col-12 mb-4">
-        <div class="card border-0 bg-white p-4 shadow-sm rounded-3">
-            <div class="d-flex align-items-center justify-content-between flex-wrap">
+        <div class="card border-0 bg-white p-3 p-md-4 shadow-sm rounded-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <div>
-                    <h2 class="fw-bold mb-1">Hello, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h2>
-                    <p class="text-secondary mb-0">Welcome to your dashboard. Today is <span class="fw-semibold text-primary"><?php echo date('F j, Y'); ?></span></p>
+                    <h2 class="fw-bold mb-1 fs-3">Hello, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h2>
+                    <p class="text-secondary mb-0 small">Welcome to your dashboard. Today is <span class="fw-semibold text-primary"><?php echo date('F j, Y'); ?></span></p>
                 </div>
-                <div class="mt-3 mt-sm-0">
+                <div class="mt-2 mt-sm-0">
                     <span class="badge bg-primary px-3 py-2 fs-6">
                         <i class="fa-solid fa-user-shield me-2"></i><?php echo $role; ?> Panel
                     </span>
@@ -234,26 +234,26 @@ include_once __DIR__ . '/includes/header.php';
         <!-- Left Sidebar Column: Personal Info & Leave Balance -->
         <div class="col-12 col-lg-4 mb-4">
             <!-- Profile Overview Card -->
-            <div class="card border-0 shadow-sm text-center p-4 mb-4 bg-white">
+            <div class="card border-0 shadow-sm text-center p-3 p-md-4 mb-4 bg-white">
                 <div class="profile-photo-wrapper">
                     <img src="<?php echo !empty($employeeInfo['photo']) && file_exists($employeeInfo['photo']) ? $employeeInfo['photo'] : 'uploads/default.png'; ?>" alt="Profile Photo">
                 </div>
-                <h4 class="fw-bold mb-1"><?php echo htmlspecialchars($employeeInfo['first_name'] . ' ' . $employeeInfo['last_name']); ?></h4>
-                <p class="text-secondary mb-2"><?php echo htmlspecialchars($employeeInfo['designation'] ?? 'Staff Member'); ?></p>
+                <h4 class="fw-bold mb-1 text-truncate"><?php echo htmlspecialchars($employeeInfo['first_name'] . ' ' . $employeeInfo['last_name']); ?></h4>
+                <p class="text-secondary mb-2 text-truncate"><?php echo htmlspecialchars($employeeInfo['designation'] ?? 'Staff Member'); ?></p>
                 <span class="badge bg-light text-primary border border-primary px-3 py-1 mb-3"><?php echo htmlspecialchars($employeeInfo['staff_type']); ?> Staff</span>
 
                 <hr class="my-3">
 
                 <div class="text-start">
-                    <div class="mb-2 text-secondary small"><i class="fa-solid fa-id-card me-2 text-primary"></i> <span class="fw-semibold text-dark">ID:</span> <?php echo htmlspecialchars($employeeInfo['employee_id']); ?></div>
-                    <div class="mb-2 text-secondary small"><i class="fa-solid fa-envelope me-2 text-primary"></i> <span class="fw-semibold text-dark">Email:</span> <?php echo htmlspecialchars($employeeInfo['email']); ?></div>
-                    <div class="mb-2 text-secondary small"><i class="fa-solid fa-phone me-2 text-primary"></i> <span class="fw-semibold text-dark">Phone:</span> <?php echo htmlspecialchars($employeeInfo['phone'] ?? 'N/A'); ?></div>
-                    <div class="mb-0 text-secondary small"><i class="fa-solid fa-building me-2 text-primary"></i> <span class="fw-semibold text-dark">Dept:</span> <?php echo htmlspecialchars($employeeInfo['department_name'] ?? 'Unassigned'); ?></div>
+                    <div class="mb-2 text-secondary small text-truncate"><i class="fa-solid fa-id-card me-2 text-primary"></i> <span class="fw-semibold text-dark">ID:</span> <?php echo htmlspecialchars($employeeInfo['employee_id']); ?></div>
+                    <div class="mb-2 text-secondary small text-truncate"><i class="fa-solid fa-envelope me-2 text-primary"></i> <span class="fw-semibold text-dark">Email:</span> <?php echo htmlspecialchars($employeeInfo['email']); ?></div>
+                    <div class="mb-2 text-secondary small text-truncate"><i class="fa-solid fa-phone me-2 text-primary"></i> <span class="fw-semibold text-dark">Phone:</span> <?php echo htmlspecialchars($employeeInfo['phone'] ?? 'N/A'); ?></div>
+                    <div class="mb-0 text-secondary small text-truncate"><i class="fa-solid fa-building me-2 text-primary"></i> <span class="fw-semibold text-dark">Dept:</span> <?php echo htmlspecialchars($employeeInfo['department_name'] ?? 'Unassigned'); ?></div>
                 </div>
             </div>
 
             <!-- Quick Actions Card -->
-            <div class="card border-0 shadow-sm p-4 bg-white">
+            <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
                 <h5 class="fw-bold mb-3">Quick Actions</h5>
                 <div class="d-grid gap-2">
                     <a href="leave-apply.php" class="btn btn-ipmc text-white text-start"><i class="fa-solid fa-calendar-plus me-2"></i> Apply for Leave</a>
@@ -265,7 +265,7 @@ include_once __DIR__ . '/includes/header.php';
         <!-- Right Main Column: Leave Balances, Attendance & Announcements -->
         <div class="col-12 col-lg-8 mb-4">
             <!-- Leave Balance Tracker -->
-            <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
+            <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 bg-white">
                 <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-hourglass-start text-primary me-2"></i> Leave Balances</h5>
                 <div class="row">
                     <?php if (empty($leaveBalances)): ?>
@@ -297,10 +297,10 @@ include_once __DIR__ . '/includes/header.php';
             </div>
 
             <!-- Recent Personal Attendance History -->
-            <div class="card border-0 shadow-sm p-4 mb-4 bg-white">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 bg-white">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clipboard-user text-success me-2"></i> Recent Attendance (Last 30 Days)</h5>
-                    <a href="attendance-report.php" class="btn btn-sm btn-outline-success fw-semibold">All Logs</a>
+                    <a href="attendance-report.php" class="btn btn-sm btn-outline-success fw-semibold btn-submit-mobile">All Logs</a>
                 </div>
                 <?php if (empty($personalAttendance)): ?>
                     <div class="text-center py-4 text-muted">
@@ -349,7 +349,7 @@ include_once __DIR__ . '/includes/header.php';
             </div>
 
             <!-- Bulletins/Announcements Board -->
-            <div class="card border-0 shadow-sm p-4 bg-white">
+            <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
                 <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-bullhorn text-info me-2"></i> Institutional Bulletins</h5>
                 <?php if (empty($announcements)): ?>
                     <div class="text-center py-4 text-muted">

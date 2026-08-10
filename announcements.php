@@ -58,7 +58,7 @@ include_once __DIR__ . '/includes/header.php';
     <!-- Left Column: Add Announcement (Admin/HR only) -->
     <?php if (isAdmin() || isHR()): ?>
         <div class="col-12 col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm p-4 bg-white">
+            <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
                 <h5 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-plus-circle text-success me-2"></i> Post New Announcement</h5>
 
                 <?php if (!empty($error)): ?>
@@ -91,7 +91,7 @@ include_once __DIR__ . '/includes/header.php';
 
     <!-- Right Column: Bulletins Feed -->
     <div class="col-12 <?php echo (isAdmin() || isHR()) ? 'col-lg-8' : ''; ?> mb-4">
-        <div class="card border-0 shadow-sm p-4 bg-white h-100">
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white h-100">
             <h5 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-newspaper text-primary me-2"></i> Active Bulletins & Campus Board</h5>
 
             <?php if (empty($announcements)): ?>

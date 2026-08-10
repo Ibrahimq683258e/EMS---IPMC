@@ -99,10 +99,10 @@ include_once __DIR__ . '/includes/header.php';
 
 <div class="row justify-content-center">
     <div class="col-12 col-xl-10">
-        <div class="card border-0 shadow-sm p-4 bg-white">
-            <div class="d-flex align-items-center mb-4 border-bottom pb-3">
-                <a href="employees.php" class="btn btn-sm btn-outline-secondary me-3"><i class="fa-solid fa-arrow-left"></i> Back</a>
-                <h4 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-user-plus text-primary me-2"></i> Register New Staff Member</h4>
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
+            <div class="d-flex align-items-center flex-wrap mb-4 border-bottom pb-3 gap-2">
+                <a href="employees.php" class="btn btn-sm btn-outline-secondary me-2"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <h4 class="fw-bold mb-0 text-dark fs-5"><i class="fa-solid fa-user-plus text-primary me-2"></i> Register New Staff Member</h4>
             </div>
 
             <?php if (!empty($error)): ?>
@@ -204,7 +204,7 @@ include_once __DIR__ . '/includes/header.php';
                 </div>
 
                 <div class="col-12 mt-4 text-end">
-                    <button type="submit" class="btn btn-ipmc px-4 py-2"><i class="fa-solid fa-save me-1"></i> Register Staff</button>
+                    <button type="submit" class="btn btn-ipmc btn-submit-mobile px-4 py-2"><i class="fa-solid fa-save me-1"></i> Register Staff</button>
                 </div>
             </form>
         </div>

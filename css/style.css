@@ -6,7 +6,7 @@
     --ipmc-dark: #1e272e;
     --ipmc-light: #f8f9fa;
     --ipmc-sidebar-width: 250px;
-    --ipmc-transition: all 0.3s ease;
+    --ipmc-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -14,6 +14,15 @@ body {
     background-color: #f5f6fa;
     color: var(--ipmc-dark);
     min-height: 100vh;
+    overflow-x: hidden;
+}
+
+#wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
 }
 
 /* Sidebar Styling */
@@ -26,9 +35,9 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 1040;
     transition: var(--ipmc-transition);
-    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    box-shadow: 4px 0 10px rgba(0,0,0,0.15);
 }
 
 #sidebar .sidebar-header {
@@ -72,11 +81,13 @@ body {
 
 /* Content Area Layout */
 #content {
+    flex: 1;
     margin-left: var(--ipmc-sidebar-width);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     transition: var(--ipmc-transition);
+    width: calc(100% - var(--ipmc-sidebar-width));
 }
 
 /* Top Navbar Styling */
@@ -85,6 +96,7 @@ body {
     border-bottom: 1px solid #e2e8f0;
     padding: 0.85rem 1.5rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    z-index: 1030;
 }
 
 /* Dashboard Summary Cards */
@@ -114,19 +126,24 @@ body {
     justify-content: center;
     font-size: 1.35rem;
     font-weight: 700;
+    flex-shrink: 0;
 }
 
-/* Professional Tables */
+/* Professional Tables with fluid boundaries */
 .table-responsive {
     border-radius: 12px;
     background-color: #fff;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     border: 1px solid #e2e8f0;
-    overflow: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+    width: 100%;
 }
 
 .table {
     margin: 0;
+    width: 100%;
 }
 
 .table th {
@@ -138,6 +155,7 @@ body {
     letter-spacing: 0.5px;
     padding: 1rem 1.25rem;
     border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
 }
 
 .table td {
@@ -185,6 +203,7 @@ body {
     padding: 0.6rem 0.9rem;
     font-size: 0.95rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
 }
 
 .form-control:focus, .form-select:focus {
@@ -201,6 +220,7 @@ body {
     border: 4px solid #fff;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     margin: 0 auto 1rem;
+    flex-shrink: 0;
 }
 
 .profile-photo-wrapper img {
@@ -217,7 +237,34 @@ body {
     font-size: 0.75rem;
 }
 
-/* Mobile Responsiveness */
+/* Interactive Sidebar Backdrop Overlay for Mobile screens */
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1035;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+.sidebar-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Mobile & Tablet Responsiveness rules across breakpoints */
+
+/* Large screens and desktops */
+@media (min-width: 992px) {
+    #sidebar {
+        margin-left: 0 !important;
+    }
+}
+
+/* Mobile & Tablet Viewports < 992px */
 @media (max-width: 991.98px) {
     #sidebar {
         margin-left: calc(-1 * var(--ipmc-sidebar-width));
@@ -227,8 +274,73 @@ body {
     }
     #content {
         margin-left: 0;
+        width: 100%;
     }
     .top-navbar {
         padding: 0.85rem 1rem;
+    }
+}
+
+/* Medium & Small Tablet Breakpoint Range */
+@media (max-width: 767.98px) {
+    .top-navbar h5 {
+        font-size: 1.1rem;
+    }
+    .container-fluid {
+        padding: 1rem !important;
+    }
+    .card-stat .card-body {
+        padding: 1.25rem;
+    }
+}
+
+/* Extra Small Phones & Narrow break limits (320px to 480px) */
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+    .top-navbar {
+        padding: 0.75rem 0.85rem;
+    }
+    .top-navbar #userMenuDropdown span {
+        display: none !important;
+    }
+    .card-stat .card-body {
+        padding: 1rem;
+    }
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.15rem;
+    }
+
+    /* Target large primary action buttons to make them fully tapable */
+    .btn-ipmc, .btn-accent, .btn-submit-mobile {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-group, .d-flex-mobile-stack {
+        flex-direction: column !important;
+    }
+    .btn-group .btn {
+        border-radius: 6px !important;
+        margin-bottom: 0.25rem;
+        width: 100%;
+    }
+    /* Stop clipping on table texts */
+    .table td, .table th {
+        padding: 0.75rem 0.85rem;
+    }
+    /* Multi-columns wrap naturally */
+    .row {
+        --bs-gutter-x: 1rem;
+    }
+}
+
+/* Ultra Narrow Device Limits (320px - 350px) */
+@media (max-width: 350px) {
+    .top-navbar h5 {
+        display: none !important; /* Hide title completely to avoid overlaps */
     }
 }

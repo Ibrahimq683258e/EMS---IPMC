@@ -1,0 +1,25 @@
+[Mon Aug 10 18:22:00 2026] PHP 8.3.6 Development Server (http://0.0.0.0:8000) started
+[Mon Aug 10 18:25:07 2026] 127.0.0.1:45276 Accepted
+[Mon Aug 10 18:25:07 2026] 127.0.0.1:45276 [200]: GET /login.php
+[Mon Aug 10 18:25:08 2026] 127.0.0.1:45276 Closing
+[Mon Aug 10 18:25:10 2026] 127.0.0.1:46268 Accepted
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46268 [302]: POST /login.php
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46268 Closing
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46284 Accepted
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46284 [200]: GET /dashboard.php
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46284 Closing
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46298 Accepted
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46304 Accepted
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46298 [200]: GET /css/style.css
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46304 [200]: GET /uploads/default.png
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46298 Closing
+[Mon Aug 10 18:25:11 2026] 127.0.0.1:46304 Closing
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46308 Accepted
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46308 [200]: GET /employees.php
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46308 Closing
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46318 Accepted
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46318 [200]: GET /css/style.css
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46318 Closing
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46328 Accepted
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46328 [200]: GET /uploads/default.png
+[Mon Aug 10 18:25:13 2026] 127.0.0.1:46328 Closing

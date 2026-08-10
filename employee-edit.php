@@ -107,11 +107,11 @@ include_once __DIR__ . '/includes/header.php';
 
 <div class="row justify-content-center">
     <div class="col-12 col-xl-10">
-        <div class="card border-0 shadow-sm p-4 bg-white">
-            <div class="d-flex align-items-center mb-4 border-bottom pb-3">
-                <a href="employees.php" class="btn btn-sm btn-outline-secondary me-3"><i class="fa-solid fa-arrow-left"></i> Back</a>
-                <h4 class="fw-bold mb-0 text-dark">
-                    <i class="fa-solid fa-user-pen text-warning me-2"></i> Edit Staff Member: <?php echo htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']); ?>
+        <div class="card border-0 shadow-sm p-3 p-md-4 bg-white">
+            <div class="d-flex align-items-center flex-wrap mb-4 border-bottom pb-3 gap-2">
+                <a href="employees.php" class="btn btn-sm btn-outline-secondary me-2"><i class="fa-solid fa-arrow-left"></i> Back</a>
+                <h4 class="fw-bold mb-0 text-dark fs-5">
+                    <i class="fa-solid fa-user-pen text-warning me-2"></i> Edit Staff: <?php echo htmlspecialchars($employee['first_name'] . ' ' . $employee['last_name']); ?>
                 </h4>
             </div>
 
@@ -223,7 +223,7 @@ include_once __DIR__ . '/includes/header.php';
                 </div>
 
                 <div class="col-12 mt-4 text-end">
-                    <button type="submit" class="btn btn-warning text-dark fw-bold px-4 py-2"><i class="fa-solid fa-user-check me-1"></i> Update Details</button>
+                    <button type="submit" class="btn btn-warning btn-submit-mobile text-dark fw-bold px-4 py-2"><i class="fa-solid fa-user-check me-1"></i> Update Details</button>
                 </div>
             </form>
         </div>
