@@ -23,3 +23,69 @@
 [Mon Aug 10 18:25:13 2026] 127.0.0.1:46328 Accepted
 [Mon Aug 10 18:25:13 2026] 127.0.0.1:46328 [200]: GET /uploads/default.png
 [Mon Aug 10 18:25:13 2026] 127.0.0.1:46328 Closing
+[Tue Aug 11 17:22:55 2026] 127.0.0.1:55640 Accepted
+[Tue Aug 11 17:22:55 2026] 127.0.0.1:55640 [200]: GET /login.php
+[Tue Aug 11 17:22:55 2026] 127.0.0.1:55640 Closing
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36352 Accepted
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36352 [302]: POST /login.php
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36352 Closing
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36356 Accepted
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36356 [200]: GET /dashboard.php
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36356 Closing
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36360 Accepted
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36372 Accepted
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36360 [200]: GET /css/style.css
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36372 [200]: GET /uploads/default.png
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36360 Closing
+[Tue Aug 11 17:22:57 2026] 127.0.0.1:36372 Closing
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36378 Accepted
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36378 [200]: GET /salary-bonuses.php
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36378 Closing
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36392 Accepted
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36404 Accepted
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36392 [200]: GET /css/style.css
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36392 Closing
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36404 [200]: GET /uploads/default.png
+[Tue Aug 11 17:22:58 2026] 127.0.0.1:36404 Closing
+[Tue Aug 11 17:25:00 2026] 127.0.0.1:43088 Accepted
+[Tue Aug 11 17:25:00 2026] 127.0.0.1:43088 [200]: GET /login.php
+[Tue Aug 11 17:25:00 2026] 127.0.0.1:43088 Closing
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43090 Accepted
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43090 [302]: POST /login.php
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43090 Closing
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43092 Accepted
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43092 [200]: GET /dashboard.php
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43092 Closing
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43098 Accepted
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43104 Accepted
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43098 [200]: GET /css/style.css
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43104 [200]: GET /uploads/default.png
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43098 Closing
+[Tue Aug 11 17:25:02 2026] 127.0.0.1:43104 Closing
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43114 Accepted
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43114 [200]: GET /salary-bonuses.php
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43114 Closing
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43128 Accepted
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43138 Accepted
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43128 [200]: GET /css/style.css
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43138 [200]: GET /uploads/default.png
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43128 Closing
+[Tue Aug 11 17:25:04 2026] 127.0.0.1:43138 Closing
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42484 Accepted
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42484 [200]: GET /salary-update.php?id=3
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42484 Closing
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42486 Accepted
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42486 [200]: GET /css/style.css
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42486 Closing
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42500 Accepted
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42500 [200]: GET /uploads/default.png
+[Tue Aug 11 17:25:07 2026] 127.0.0.1:42500 Closing
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42502 Accepted
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42502 [200]: GET /bonus-add.php?id=3
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42502 Closing
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42512 Accepted
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42516 Accepted
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42512 [200]: GET /css/style.css
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42516 [200]: GET /uploads/default.png
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42512 Closing
+[Tue Aug 11 17:25:08 2026] 127.0.0.1:42516 Closing

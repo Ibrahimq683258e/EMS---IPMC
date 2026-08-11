@@ -2,7 +2,8 @@
 -- For IPMC Tamale Campus, Ghana
 -- Highly professional and structured schema
 
-CREATE DATABASE IF NOT EXISTS `ipmc_ems` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS `ipmc_ems`;
+CREATE DATABASE `ipmc_ems` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `ipmc_ems`;
 
 -- 1. Departments Table
@@ -110,7 +111,56 @@ CREATE TABLE IF NOT EXISTS `announcements` (
     FOREIGN KEY (`created_by`) REFERENCES `employees` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Seed Sample Data
+-- 8. Salaries Table
+CREATE TABLE IF NOT EXISTS `salaries` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `employee_id` INT NOT NULL UNIQUE,
+    `basic_salary` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 9. Salary History Table
+CREATE TABLE IF NOT EXISTS `salary_history` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `employee_id` INT NOT NULL,
+    `old_salary` DECIMAL(10,2) NOT NULL,
+    `new_salary` DECIMAL(10,2) NOT NULL,
+    `changed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `changed_by` INT DEFAULT NULL,
+    FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`changed_by`) REFERENCES `employees` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 10. Bonuses Table
+CREATE TABLE IF NOT EXISTS `bonuses` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `employee_id` INT NOT NULL,
+    `bonus_type` VARCHAR(100) NOT NULL, -- e.g., 'Performance', 'Annual', 'Special'
+    `amount` DECIMAL(10,2) NOT NULL,
+    `date_given` DATE NOT NULL,
+    `reason` TEXT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 11. Salary Payments (Payroll) Table
+CREATE TABLE IF NOT EXISTS `salary_payments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `employee_id` INT NOT NULL,
+    `year` INT NOT NULL,
+    `month` INT NOT NULL, -- 1 to 12
+    `basic_salary` DECIMAL(10,2) NOT NULL,
+    `bonus_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    `total_earnings` DECIMAL(10,2) NOT NULL,
+    `status` ENUM('Unpaid', 'Paid') NOT NULL DEFAULT 'Unpaid',
+    `paid_date` DATE DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `emp_year_month` (`employee_id`, `year`, `month`),
+    FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 12. Seed Sample Data
 -- Insert Initial Departments
 INSERT INTO `departments` (`name`, `code`, `description`) VALUES
 ('Academic Administration', 'ACAD-ADMIN', 'Covers curriculum design, academic standards, and program oversight.'),
@@ -163,3 +213,27 @@ INSERT INTO `appraisals` (`employee_id`, `appraiser_id`, `rating`, `comments`, `
 INSERT INTO `announcements` (`title`, `content`, `created_by`) VALUES
 ('Welcome to the New Academic Year!', 'Welcome back, academic and non-academic staff. Let us work together to make the 2025 academic year at IPMC Tamale Campus a stellar success! Please note that general staff meeting is on Friday.', 2),
 ('Submission of Course Outlines', 'All academic staff are requested to submit their course outlines for the first semester to the Academic Administration Department by the end of this week.', 1);
+
+-- Insert Sample Salaries
+INSERT INTO `salaries` (`employee_id`, `basic_salary`) VALUES
+(1, 6500.00),
+(2, 4500.00),
+(3, 5000.00),
+(4, 3500.00);
+
+-- Insert Sample Salary History (Initial Setup)
+INSERT INTO `salary_history` (`employee_id`, `old_salary`, `new_salary`, `changed_by`) VALUES
+(1, 0.00, 6500.00, 1),
+(2, 0.00, 4500.00, 1),
+(3, 0.00, 5000.00, 1),
+(4, 0.00, 3500.00, 1);
+
+-- Insert Sample Bonuses
+INSERT INTO `bonuses` (`employee_id`, `bonus_type`, `amount`, `date_given`, `reason`) VALUES
+(3, 'Performance', 800.00, '2025-02-26', 'Outstanding teaching feedback and IT lab setup.'),
+(4, 'Special', 500.00, '2025-02-27', 'Exceeded admissions registration targets.');
+
+-- Insert Sample Salary Payments (Feb 2025)
+INSERT INTO `salary_payments` (`employee_id`, `year`, `month`, `basic_salary`, `bonus_amount`, `total_earnings`, `status`, `paid_date`) VALUES
+(3, 2025, 2, 5000.00, 800.00, 5800.00, 'Paid', '2025-02-28'),
+(4, 2025, 2, 3500.00, 500.00, 4000.00, 'Unpaid', NULL);

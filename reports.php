@@ -7,17 +7,30 @@ require_once __DIR__ . '/classes/Department.php';
 require_once __DIR__ . '/classes/Employee.php';
 require_once __DIR__ . '/classes/Leave.php';
 require_once __DIR__ . '/classes/Attendance.php';
+require_once __DIR__ . '/classes/Salary.php';
 
 $departmentModel = new Department();
 $employeeModel = new Employee();
 $leaveModel = new Leave();
 $attendanceModel = new Attendance();
+$salaryModel = new Salary();
 
 // Collect reports aggregations
 $departments = $departmentModel->getAll();
 $employees = $employeeModel->getAll();
 $leaveSummary = $leaveModel->getSummary();
 $allLeaves = $leaveModel->getAll();
+
+// Salary and Bonuses report aggregations
+$sal_year = intval($_GET['sal_year'] ?? date('Y'));
+$sal_month = intval($_GET['sal_month'] ?? date('n'));
+$payrollReport = $salaryModel->getMonthlyPayrollReport($sal_year, $sal_month);
+
+$bon_year = isset($_GET['bon_year']) && $_GET['bon_year'] !== '' ? intval($_GET['bon_year']) : null;
+$bon_month = isset($_GET['bon_month']) && $_GET['bon_month'] !== '' ? intval($_GET['bon_month']) : null;
+$bonusesReport = $salaryModel->getBonusesReport($bon_year, $bon_month);
+
+$earningsReport = $salaryModel->getEmployeesEarningsSummaryReport();
 
 // Get date filters for attendance report (defaulting to current month)
 $start_date = $_GET['start_date'] ?? date('Y-m-01');
@@ -222,6 +235,177 @@ include_once __DIR__ . '/includes/header.php';
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payroll Monthly Payments Report -->
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow-sm bg-white p-1">
+            <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-file-invoice-dollar text-primary me-2"></i> Monthly Payroll Payouts Report</h5>
+                <form class="row g-2 d-print-none align-items-center m-0">
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" name="sal_year">
+                            <?php for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++): ?>
+                                <option value="<?php echo $y; ?>" <?php echo ($sal_year === $y) ? 'selected' : ''; ?>><?php echo $y; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" name="sal_month">
+                            <?php for ($m = 1; $m <= 12; $m++): ?>
+                                <option value="<?php echo $m; ?>" <?php echo ($sal_month === $m) ? 'selected' : ''; ?>>
+                                    <?php echo date('M', mktime(0, 0, 0, $m, 1)); ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-ipmc"><i class="fa-solid fa-filter"></i></button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Staff Code</th>
+                                <th>Full Name</th>
+                                <th>Department</th>
+                                <th>Basic Salary</th>
+                                <th>Bonuses Paid</th>
+                                <th>Total Earnings</th>
+                                <th>Payment Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($payrollReport)): ?>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">No finalized payments logged for <?php echo date('F Y', mktime(0,0,0, $sal_month, 1, $sal_year)); ?>.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($payrollReport as $p): ?>
+                                    <tr>
+                                        <td><span class="fw-bold text-primary"><?php echo htmlspecialchars($p['emp_code']); ?></span></td>
+                                        <td><span class="fw-semibold"><?php echo htmlspecialchars($p['first_name'] . ' ' . $p['last_name']); ?></span></td>
+                                        <td><small class="text-secondary"><?php echo htmlspecialchars($p['department_name'] ?? 'Unassigned'); ?></small></td>
+                                        <td>GHS <?php echo number_format($p['basic_salary'], 2); ?></td>
+                                        <td>GHS <?php echo number_format($p['bonus_amount'], 2); ?></td>
+                                        <td><strong class="text-success">GHS <?php echo number_format($p['total_earnings'], 2); ?></strong></td>
+                                        <td><span class="badge bg-light text-dark border"><?php echo $p['paid_date'] ? date('M j, Y', strtotime($p['paid_date'])) : 'Paid'; ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly/Yearly Bonus Distribution Report -->
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow-sm bg-white p-1">
+            <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-gift text-warning me-2"></i> Bonuses Distribution Report</h5>
+                <form class="row g-2 d-print-none align-items-center m-0">
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" name="bon_year">
+                            <option value="">All Years</option>
+                            <?php for ($y = date('Y') - 2; $y <= date('Y') + 1; $y++): ?>
+                                <option value="<?php echo $y; ?>" <?php echo ($bon_year === $y) ? 'selected' : ''; ?>><?php echo $y; ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <select class="form-select form-select-sm" name="bon_month">
+                            <option value="">All Months</option>
+                            <?php for ($m = 1; $m <= 12; $m++): ?>
+                                <option value="<?php echo $m; ?>" <?php echo ($bon_month === $m) ? 'selected' : ''; ?>>
+                                    <?php echo date('M', mktime(0, 0, 0, $m, 1)); ?>
+                                </option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-sm btn-ipmc"><i class="fa-solid fa-filter"></i></button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Staff Code</th>
+                                <th>Full Name</th>
+                                <th>Department</th>
+                                <th>Bonus Type</th>
+                                <th>Amount</th>
+                                <th>Date Given</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($bonusesReport)): ?>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">No bonuses logged matching the selected timeline.</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($bonusesReport as $b): ?>
+                                    <tr>
+                                        <td><span class="fw-bold text-primary"><?php echo htmlspecialchars($b['emp_code']); ?></span></td>
+                                        <td><span class="fw-semibold"><?php echo htmlspecialchars($b['first_name'] . ' ' . $b['last_name']); ?></span></td>
+                                        <td><small class="text-secondary"><?php echo htmlspecialchars($b['department_name'] ?? 'Unassigned'); ?></small></td>
+                                        <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($b['bonus_type']); ?></span></td>
+                                        <td><strong class="text-success">GHS <?php echo number_format($b['amount'], 2); ?></strong></td>
+                                        <td><small><?php echo date('M j, Y', strtotime($b['date_given'])); ?></small></td>
+                                        <td><small class="text-secondary text-truncate d-block" style="max-width: 250px;"><?php echo htmlspecialchars($b['reason'] ?? 'N/A'); ?></small></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Earnings Summary -->
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow-sm bg-white p-1">
+            <div class="card-header bg-light border-0 py-3">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-award text-success me-2"></i> Employee Compensation & Earnings Summary</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Staff Code</th>
+                                <th>Full Name</th>
+                                <th>Department</th>
+                                <th>Basic Salary</th>
+                                <th>Cumulative Bonuses</th>
+                                <th>Est. Monthly Earnings</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($earningsReport as $e): ?>
+                                <tr>
+                                    <td><span class="fw-bold text-primary"><?php echo htmlspecialchars($e['emp_code']); ?></span></td>
+                                    <td><span class="fw-semibold"><?php echo htmlspecialchars($e['first_name'] . ' ' . $e['last_name']); ?></span></td>
+                                    <td><small class="text-secondary"><?php echo htmlspecialchars($e['department_name'] ?? 'Unassigned'); ?></small></td>
+                                    <td>GHS <?php echo number_format($e['basic_salary'] ?? 0.00, 2); ?></td>
+                                    <td>GHS <?php echo number_format($e['total_bonuses'] ?? 0.00, 2); ?></td>
+                                    <td><strong class="text-success">GHS <?php echo number_format($e['estimated_monthly_earnings'] ?? 0.00, 2); ?></strong></td>
+                                </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>

@@ -142,10 +142,52 @@ assertTest($post_ok, "Announcement::create() posts new institutional bulletin");
 $announcements = $annModel->getLatest(1);
 assertTest(count($announcements) === 1 && $announcements[0]['title'] === "Testing Bulletin Board", "Announcement::getLatest() retrieves correct notice");
 
+// 8. Salary, Bonuses, and Payroll Integration Tests
+require_once __DIR__ . '/../classes/Salary.php';
+$salaryModel = new Salary();
+
+// Set basic salary
+$set_sal_ok = $salaryModel->updateSalary($new_emp_id, 4800.00, $adminUser['id']);
+assertTest($set_sal_ok, "Salary::updateSalary() sets basic monthly salary of GHS 4,800.00");
+
+// Check current salary matches
+$curr_sal = $salaryModel->getSalary($new_emp_id);
+assertTest($curr_sal && floatval($curr_sal['basic_salary']) === 4800.00, "Salary::getSalary() retrieves the correct basic rate of GHS 4,800.00");
+
+// Check history log has entry
+$sal_hist = $salaryModel->getHistory($new_emp_id);
+assertTest(count($sal_hist) === 1 && floatval($sal_hist[0]['new_salary']) === 4800.00, "Salary::getHistory() logs salary modification properly");
+
+// Add employee bonus
+$add_bon_ok = $salaryModel->addBonus($new_emp_id, 'Performance Bonus', 650.00, date('Y-m-d'), 'Outstanding automation integration.');
+assertTest($add_bon_ok, "Salary::addBonus() awards GHS 650.00 performance bonus");
+
+// Verify monthly bonus total
+$bonus_tot = $salaryModel->getMonthlyBonusTotal($new_emp_id, date('Y'), date('n'));
+assertTest($bonus_tot === 650.00, "Salary::getMonthlyBonusTotal() returns GHS 650.00 for the current month");
+
+// Verify monthly payroll preview calculations
+$payroll_entry = $salaryModel->getMonthlyPayrollEntry($new_emp_id, date('Y'), date('n'));
+assertTest(floatval($payroll_entry['basic_salary']) === 4800.00 && floatval($payroll_entry['bonus_amount']) === 650.00 && floatval($payroll_entry['total_earnings']) === 5450.00, "Salary::getMonthlyPayrollEntry() automatically calculates total earnings (Basic + Bonuses) correctly");
+
+// Mark as paid
+$save_pay_ok = $salaryModel->saveMonthlyPayment($new_emp_id, date('Y'), date('n'), 'Paid', date('Y-m-d'));
+assertTest($save_pay_ok, "Salary::saveMonthlyPayment() registers monthly payout and marks status as Paid");
+
+// Verify payout slips in history list
+$pay_hist = $salaryModel->getPaymentHistory($new_emp_id);
+assertTest(count($pay_hist) === 1 && $pay_hist[0]['status'] === 'Paid' && floatval($pay_hist[0]['total_earnings']) === 5450.00, "Salary::getPaymentHistory() returns pay slips with complete historical amounts");
+
 // Clean Up Temporary Database Objects to prevent bloating
 echo "\n=== CLEANING UP TEMPORARY TESTING ENTITIES ===\n";
 try {
     $db_cleanup = Database::connect();
+
+    // Delete test salary payments, history, bonuses, and salaries
+    $db_cleanup->exec("DELETE FROM salary_payments WHERE employee_id = {$new_emp_id}");
+    $db_cleanup->exec("DELETE FROM bonuses WHERE employee_id = {$new_emp_id}");
+    $db_cleanup->exec("DELETE FROM salary_history WHERE employee_id = {$new_emp_id}");
+    $db_cleanup->exec("DELETE FROM salaries WHERE employee_id = {$new_emp_id}");
 
     // Delete test announcement
     $db_cleanup->exec("DELETE FROM announcements WHERE title = 'Testing Bulletin Board'");
@@ -162,7 +204,7 @@ try {
 
     // Delete test employee
     $db_cleanup->exec("DELETE FROM employees WHERE id = {$new_emp_id}");
-    echo "Deleted temporary test employee, appraisals, leaves, balances, and attendance logs.\n";
+    echo "Deleted temporary test employee, salary tables, appraisals, leaves, balances, and attendance logs.\n";
 
     // Delete test department
     $deptModel->delete($temp_dept['id']);

@@ -31,6 +31,12 @@ $role = $_SESSION['user_role'] ?? 'Employee';
             </a>
         <?php endif; ?>
 
+        <!-- Shared Payroll & Compensation -->
+        <div class="px-3 py-2 text-uppercase text-white-50 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Payroll & Compensation</div>
+        <a href="salary-bonuses.php" class="nav-link <?php echo (in_array($current_page, ['salary-bonuses.php', 'salary-update.php', 'bonus-add.php', 'bonus-edit.php'])) ? 'active' : ''; ?>">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Salary & Bonuses
+        </a>
+
         <!-- Leave Management Links -->
         <div class="px-3 py-2 text-uppercase text-white-50 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Leave & Attendance</div>
 

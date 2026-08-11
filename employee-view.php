@@ -7,11 +7,13 @@ require_once __DIR__ . '/classes/Employee.php';
 require_once __DIR__ . '/classes/Leave.php';
 require_once __DIR__ . '/classes/Attendance.php';
 require_once __DIR__ . '/classes/Appraisal.php';
+require_once __DIR__ . '/classes/Salary.php';
 
 $employeeModel = new Employee();
 $leaveModel = new Leave();
 $attendanceModel = new Attendance();
 $appraisalModel = new Appraisal();
+$salaryModel = new Salary();
 
 $id = intval($_GET['id'] ?? 0);
 
@@ -33,6 +35,9 @@ if (!$employee) {
 $leaveBalances = $leaveModel->getBalances($id);
 $appraisals = $appraisalModel->getByEmployee($id);
 $attendanceLogs = $attendanceModel->getByEmployee($id, date('Y-m-d', strtotime('-30 days')), date('Y-m-d'));
+$empSalary = $salaryModel->getSalary($id);
+$empBonuses = $salaryModel->getBonusesByEmployee($id);
+$empPayments = $salaryModel->getPaymentHistory($id);
 
 include_once __DIR__ . '/includes/header.php';
 ?>
@@ -118,6 +123,93 @@ include_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+        </div>
+
+        <!-- Salary & Bonuses Summary Card (Profile view) -->
+        <div class="card border-0 shadow-sm p-3 p-md-4 mb-4 bg-white">
+            <h5 class="fw-bold mb-3 text-dark border-bottom pb-2"><i class="fa-solid fa-file-invoice-dollar text-success me-2"></i> Compensation & Earnings</h5>
+            <div class="row">
+                <div class="col-12 col-md-6 mb-3">
+                    <div class="p-3 border rounded bg-light">
+                        <small class="text-secondary fw-semibold d-block">Basic Salary</small>
+                        <h4 class="fw-bold text-dark m-0">GHS <?php echo number_format($empSalary['basic_salary'] ?? 0.00, 2); ?></h4>
+                        <small class="text-muted" style="font-size: 0.75rem;">Monthly Base Rate</small>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 mb-3">
+                    <?php
+                    $totalBonusesAmount = 0.00;
+                    if (!empty($empBonuses)) {
+                        foreach ($empBonuses as $b) {
+                            $totalBonusesAmount += floatval($b['amount']);
+                        }
+                    }
+                    ?>
+                    <div class="p-3 border rounded bg-light">
+                        <small class="text-secondary fw-semibold d-block">Total Bonuses Awarded</small>
+                        <h4 class="fw-bold text-success m-0">GHS <?php echo number_format($totalBonusesAmount, 2); ?></h4>
+                        <small class="text-muted" style="font-size: 0.75rem;">All-Time Bonuses (<?php echo count($empBonuses ?? []); ?> payouts)</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List of Bonuses received -->
+            <?php if (!empty($empBonuses)): ?>
+                <h6 class="fw-bold text-secondary mt-3 mb-2 small text-uppercase" style="letter-spacing: 0.5px;">Awarded Bonuses List</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle border-0">
+                        <thead>
+                            <tr class="table-light">
+                                <th>Bonus Type</th>
+                                <th>Amount</th>
+                                <th>Award Date</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($empBonuses as $bonus): ?>
+                                <tr>
+                                    <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($bonus['bonus_type']); ?></span></td>
+                                    <td><strong class="text-success">GHS <?php echo number_format($bonus['amount'], 2); ?></strong></td>
+                                    <td><small><?php echo date('M j, Y', strtotime($bonus['date_given'])); ?></small></td>
+                                    <td><small class="text-secondary text-truncate d-block" style="max-width: 250px;" title="<?php echo htmlspecialchars($bonus['reason'] ?? ''); ?>"><?php echo htmlspecialchars($bonus['reason'] ?? 'N/A'); ?></small></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+
+            <!-- Pay Slip / Payments History -->
+            <?php if (!empty($empPayments)): ?>
+                <h6 class="fw-bold text-secondary mt-3 mb-2 small text-uppercase" style="letter-spacing: 0.5px;">Recent Salary Pay Slips</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle border-0">
+                        <thead>
+                            <tr class="table-light">
+                                <th>Period</th>
+                                <th>Basic Salary</th>
+                                <th>Bonuses Paid</th>
+                                <th>Total Net Pay</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach (array_slice($empPayments, 0, 5) as $paySlip): ?>
+                                <tr>
+                                    <td><span class="fw-bold text-dark"><?php echo date('F Y', mktime(0, 0, 0, $paySlip['month'], 1, $paySlip['year'])); ?></span></td>
+                                    <td><small>GHS <?php echo number_format($paySlip['basic_salary'], 2); ?></small></td>
+                                    <td><small>GHS <?php echo number_format($paySlip['bonus_amount'], 2); ?></small></td>
+                                    <td><strong class="text-success">GHS <?php echo number_format($paySlip['total_earnings'], 2); ?></strong></td>
+                                    <td>
+                                        <span class="badge bg-success px-2 py-1 text-uppercase" style="font-size: 0.65rem;"><?php echo $paySlip['status']; ?></span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Performance Appraisal History -->
