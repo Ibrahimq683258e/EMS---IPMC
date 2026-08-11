@@ -12,7 +12,7 @@ $role = $_SESSION['user_role'] ?? 'Employee';
         <small class="text-white-50 font-weight-light" style="font-size: 0.75rem;">Employee Management</small>
     </div>
 
-    <div class="py-3">
+    <div class="sidebar-menu-wrapper py-3">
         <!-- Shared Dashboard Link -->
         <a href="dashboard.php" class="nav-link <?php echo ($current_page === 'dashboard.php') ? 'active' : ''; ?>">
             <i class="fa-solid fa-gauge"></i> Dashboard
@@ -77,7 +77,7 @@ $role = $_SESSION['user_role'] ?? 'Employee';
 
         <div class="border-top border-white-10 my-3 mx-3"></div>
 
-        <a href="logout.php" class="nav-link text-danger">
+        <a href="logout.php" class="nav-link text-danger mb-4">
             <i class="fa-solid fa-right-from-bracket text-danger"></i> Logout
         </a>
     </div>
