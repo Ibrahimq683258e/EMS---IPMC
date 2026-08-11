@@ -95,8 +95,12 @@ class Employee {
         }
 
         if (!empty($filters['search'])) {
-            $query .= " AND (e.first_name LIKE :search OR e.last_name LIKE :search OR e.employee_id LIKE :search OR e.email LIKE :search)";
-            $params['search'] = "%" . $filters['search'] . "%";
+            $query .= " AND (e.first_name LIKE :search1 OR e.last_name LIKE :search2 OR e.employee_id LIKE :search3 OR e.email LIKE :search4)";
+            $search_val = "%" . $filters['search'] . "%";
+            $params['search1'] = $search_val;
+            $params['search2'] = $search_val;
+            $params['search3'] = $search_val;
+            $params['search4'] = $search_val;
         }
 
         $query .= " ORDER BY e.employee_id ASC";

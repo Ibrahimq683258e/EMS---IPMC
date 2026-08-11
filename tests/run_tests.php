@@ -94,6 +94,22 @@ assertTest($new_emp_id > 0, "Employee::create() registers employee and allocates
 $created_emp = $empModel->findById($new_emp_id);
 assertTest($created_emp !== false && $created_emp['email'] === $temp_email, "Employee::findById() retrieves correct employee profile details");
 
+// Search & Filter Verification tests
+$search_by_name = $empModel->getAll(['search' => 'Validation']);
+$search_by_email = $empModel->getAll(['search' => $temp_email]);
+$search_by_id = $empModel->getAll(['search' => $created_emp['employee_id']]);
+$filter_with_dept = $empModel->getAll([
+    'search' => 'Tester',
+    'department_id' => $temp_dept['id'],
+    'role' => 'Employee',
+    'status' => 'Active'
+]);
+
+assertTest(count($search_by_name) >= 1 && $search_by_name[0]['id'] == $new_emp_id, "Employee search by name returns correct record");
+assertTest(count($search_by_email) >= 1 && $search_by_email[0]['id'] == $new_emp_id, "Employee search by email returns correct record");
+assertTest(count($search_by_id) >= 1 && $search_by_id[0]['id'] == $new_emp_id, "Employee search by Employee ID returns correct record");
+assertTest(count($filter_with_dept) >= 1 && $filter_with_dept[0]['id'] == $new_emp_id, "Employee search integrates correctly with department/role/status filters");
+
 // 4. Leave Balance & Application Test
 $leaveModel = new Leave();
 $balances = $leaveModel->getBalances($new_emp_id);
