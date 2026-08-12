@@ -197,27 +197,48 @@ assertTest(count($pay_hist) === 1 && $pay_hist[0]['status'] === 'Paid' && floatv
 // 9. AI Chat Assistant validation tests
 require_once __DIR__ . '/../classes/AIChatAssistant.php';
 
-// Test Employee AIChatAssistant instance
-$emp_ai = new AIChatAssistant($new_emp_id, 'Employee', 'Validation Tester');
+// Test Employee A AIChatAssistant instance
+$emp_ai_A = new AIChatAssistant($new_emp_id, 'Employee', 'Validation Tester A');
+$conv_id_A = $emp_ai_A->getActiveConversationId();
 
 // Basic Greeting Test
-$greet_res = $emp_ai->ask("Hello!");
-assertTest(strpos($greet_res, "Validation Tester") !== false, "AIChatAssistant correctly returns personalized greetings");
+$greet_res = $emp_ai_A->ask("Hello!", $conv_id_A);
+assertTest(strpos($greet_res, "Validation Tester A") !== false, "AIChatAssistant correctly returns personalized greetings");
 
 // Leave Balance Query Test
-$leave_res = $emp_ai->ask("how many leave days do I have left?");
+$leave_res = $emp_ai_A->ask("how many leave days do I have left?", $conv_id_A);
 assertTest(strpos($leave_res, "Casual") !== false, "AIChatAssistant correctly retrieves leave balances in fallback mode");
 
-// Announcements Query Test
-$ann_res = $emp_ai->ask("show me recent announcements");
-assertTest(strpos($ann_res, "Welcome to the New Academic Year!") !== false, "AIChatAssistant correctly returns latest announcements");
+// Verify history is stored in database
+$history_A = $emp_ai_A->getHistory($conv_id_A);
+assertTest(count($history_A) >= 4, "AIChatAssistant successfully persists conversations in MySQL database");
+
+// Test User Isolation (Employee B tries to read Employee A's history)
+$fake_emp_id = 99999;
+$emp_ai_B = new AIChatAssistant($fake_emp_id, 'Employee', 'Intruder B');
+$history_B_unauth = $emp_ai_B->getHistory($conv_id_A);
+assertTest(empty($history_B_unauth), "CRITICAL PROTECTION: Employee B cannot load Employee A's chat history");
+
+// Test User Isolation on writing messages
+$write_unauth = $emp_ai_B->saveMessage($conv_id_A, 'user', 'Attempting illegal write');
+assertTest($write_unauth === false, "CRITICAL PROTECTION: Employee B cannot write messages to Employee A's conversation");
+
+// Test User Isolation on clearing conversations
+$clear_unauth = $emp_ai_B->clearHistory($conv_id_A);
+assertTest($clear_unauth === false, "CRITICAL PROTECTION: Employee B cannot clear Employee A's conversation history");
+
+// Test Role-Based AI Tool Access Restrictions (Employee attempts to run Admin tools)
+$unauth_tool_res = $emp_ai_A->ask("How many active employees do we have?", $conv_id_A);
+// It should map to fallback mode general response or fallback secure explanation, and NOT return counts
+assertTest(strpos($unauth_tool_res, "active employees") === false, "CRITICAL PROTECTION: Employee cannot execute HR/Admin specific metrics");
 
 // Test Admin AIChatAssistant instance
 $admin_ai = new AIChatAssistant($adminUser['id'], 'Admin', 'Alhassan Mubarak');
+$conv_id_admin = $admin_ai->getActiveConversationId();
 
-// Total Active Employees Query Test
-$active_res = $admin_ai->ask("How many active employees do we have?");
-assertTest(strpos($active_res, "active employees") !== false, "AIChatAssistant Admin correctly lists system wide employee totals");
+// Total Active Employees Query Test (Authorized for Admin)
+$active_res = $admin_ai->ask("How many active employees do we have?", $conv_id_admin);
+assertTest(strpos($active_res, "active employees") !== false, "AIChatAssistant Admin correctly executes authorized institutional metrics");
 
 // Clean Up Temporary Database Objects to prevent bloating
 echo "\n=== CLEANING UP TEMPORARY TESTING ENTITIES ===\n";

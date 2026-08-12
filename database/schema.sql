@@ -237,3 +237,28 @@ INSERT INTO `bonuses` (`employee_id`, `bonus_type`, `amount`, `date_given`, `rea
 INSERT INTO `salary_payments` (`employee_id`, `year`, `month`, `basic_salary`, `bonus_amount`, `total_earnings`, `status`, `paid_date`) VALUES
 (3, 2025, 2, 5000.00, 800.00, 5800.00, 'Paid', '2025-02-28'),
 (4, 2025, 2, 3500.00, 500.00, 4000.00, 'Unpaid', NULL);
+
+-- 13. Chat Conversations Table
+CREATE TABLE IF NOT EXISTS `chat_conversations` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `title` VARCHAR(255) NOT NULL DEFAULT 'New Conversation',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+    INDEX `idx_chat_conv_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. Chat Messages Table
+CREATE TABLE IF NOT EXISTS `chat_messages` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `conversation_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `role` ENUM('user', 'assistant') NOT NULL,
+    `message` TEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`conversation_id`) REFERENCES `chat_conversations` (`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+    INDEX `idx_chat_msg_conv` (`conversation_id`),
+    INDEX `idx_chat_msg_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

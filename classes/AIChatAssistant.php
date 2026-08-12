@@ -16,115 +16,507 @@ class AIChatAssistant {
     }
 
     /**
-     * Process a natural language question and return a professional response.
+     * Get active conversation ID for this user, or create one if none exists.
      */
-    public function ask($question) {
-        $question = trim($question);
-        if (empty($question)) {
-            return "Please ask a question, and I'll be happy to help!";
+    public function getActiveConversationId() {
+        $stmt = $this->db->prepare("
+            SELECT id FROM chat_conversations
+            WHERE user_id = :user_id
+            ORDER BY updated_at DESC LIMIT 1
+        ");
+        $stmt->execute(['user_id' => $this->user_id]);
+        $conv_id = $stmt->fetchColumn();
+
+        if ($conv_id) {
+            return (int)$conv_id;
         }
 
-        // Determine which provider to use
-        $provider = defined('AI_PROVIDER') ? AI_PROVIDER : 'fallback';
-        $api_key = defined('AI_API_KEY') ? AI_API_KEY : '';
-
-        if (($provider === 'gemini' || $provider === 'openai') && !empty($api_key)) {
-            return $this->askLLM($question, $provider, $api_key);
-        }
-
-        // Fallback to our robust local keyword-based hybrid engine
-        return $this->askFallback($question);
+        // Create a default conversation
+        $stmt_insert = $this->db->prepare("
+            INSERT INTO chat_conversations (user_id, title)
+            VALUES (:user_id, 'New Chat')
+        ");
+        $stmt_insert->execute(['user_id' => $this->user_id]);
+        return (int)$this->db->lastInsertId();
     }
 
     /**
-     * Ask an LLM (Gemini or OpenAI) to analyze the request and safe-generate read-only responses or SQL.
+     * Verify ownership of a conversation.
+     */
+    public function verifyConversationOwnership($conversation_id) {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM chat_conversations
+            WHERE id = :id AND user_id = :user_id
+        ");
+        $stmt->execute(['id' => (int)$conversation_id, 'user_id' => $this->user_id]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Retrieve chat history strictly belonging to the current authenticated user and given conversation.
+     */
+    public function getHistory($conversation_id = null) {
+        if ($conversation_id === null) {
+            $conversation_id = $this->getActiveConversationId();
+        }
+
+        if (!$this->verifyConversationOwnership($conversation_id)) {
+            // Log unauthorized attempt securely
+            error_log("UNAUTHORIZED ACCESS ATTEMPT: User ID {$this->user_id} tried to load Conversation ID {$conversation_id}");
+            return [];
+        }
+
+        $stmt = $this->db->prepare("
+            SELECT role, message, created_at
+            FROM chat_messages
+            WHERE conversation_id = :conv_id AND user_id = :user_id
+            ORDER BY created_at ASC
+        ");
+        $stmt->execute(['conv_id' => (int)$conversation_id, 'user_id' => $this->user_id]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Save a chat message, validating user_id ownership.
+     */
+    public function saveMessage($conversation_id, $role, $message) {
+        if (!$this->verifyConversationOwnership($conversation_id)) {
+            error_log("UNAUTHORIZED WRITE ATTEMPT: User ID {$this->user_id} tried to post to Conversation ID {$conversation_id}");
+            return false;
+        }
+
+        $stmt = $this->db->prepare("
+            INSERT INTO chat_messages (conversation_id, user_id, role, message)
+            VALUES (:conv_id, :user_id, :role, :message)
+        ");
+        return $stmt->execute([
+            'conv_id' => (int)$conversation_id,
+            'user_id' => $this->user_id,
+            'role' => $role, // 'user' or 'assistant'
+            'message' => $message
+        ]);
+    }
+
+    /**
+     * Clear messages of a conversation.
+     */
+    public function clearHistory($conversation_id = null) {
+        if ($conversation_id === null) {
+            $conversation_id = $this->getActiveConversationId();
+        }
+
+        if (!$this->verifyConversationOwnership($conversation_id)) {
+            error_log("UNAUTHORIZED CLEAR ATTEMPT: User ID {$this->user_id} tried to clear Conversation ID {$conversation_id}");
+            return false;
+        }
+
+        $stmt = $this->db->prepare("
+            DELETE FROM chat_messages
+            WHERE conversation_id = :conv_id AND user_id = :user_id
+        ");
+        return $stmt->execute(['conv_id' => (int)$conversation_id, 'user_id' => $this->user_id]);
+    }
+
+    /**
+     * Define authorized tools and their role permissions.
+     */
+    private function getAvailableTools() {
+        return [
+            // Employee specific tools
+            'get_my_profile' => ['roles' => ['Employee', 'HR', 'Admin'], 'desc' => 'Get the current user\'s employee profile detail summary.'],
+            'get_my_leave_balance' => ['roles' => ['Employee', 'HR', 'Admin'], 'desc' => 'Get the current user\'s remaining leave balances.'],
+            'get_my_leave_history' => ['roles' => ['Employee', 'HR', 'Admin'], 'desc' => 'Get the current user\'s leave applications and status logs.'],
+            'get_my_attendance' => ['roles' => ['Employee', 'HR', 'Admin'], 'desc' => 'Get the current user\'s recent attendance records.'],
+            'get_my_appraisal' => ['roles' => ['Employee', 'HR', 'Admin'], 'desc' => 'Get the current user\'s latest performance appraisal rating and feedback comments.'],
+            'get_announcements' => ['roles' => ['Employee', 'HR', 'Admin'], 'desc' => 'Get the latest institutional announcements and notices.'],
+
+            // HR / Admin specific tools
+            'get_employee_count' => ['roles' => ['HR', 'Admin'], 'desc' => 'Get total employee metrics on active, academic, and non-academic staff.'],
+            'get_employees_by_department' => ['roles' => ['HR', 'Admin'], 'desc' => 'Get the list of active employees assigned to a specific department (takes name or code parameter).'],
+            'get_today_attendance' => ['roles' => ['HR', 'Admin'], 'desc' => 'Get today\'s list of absent, present, or late employees.'],
+            'get_pending_leave_requests' => ['roles' => ['HR', 'Admin'], 'desc' => 'Get counts and details of all pending leave applications awaiting approval.'],
+            'get_low_leave_balances' => ['roles' => ['HR', 'Admin'], 'desc' => 'Get the list of active employees whose remaining leave balances are critically below 5 days.'],
+            'get_recent_appraisals' => ['roles' => ['HR', 'Admin'], 'desc' => 'Get the list of recently logged performance appraisals.']
+        ];
+    }
+
+    /**
+     * Ask a question, orchestrating storage, analysis, safe tool invocation, and natural responding.
+     */
+    public function ask($question, $conversation_id = null) {
+        if ($conversation_id === null) {
+            $conversation_id = $this->getActiveConversationId();
+        }
+
+        if (!$this->verifyConversationOwnership($conversation_id)) {
+            return "Error: Unauthorized conversation context.";
+        }
+
+        // Save User Message
+        $this->saveMessage($conversation_id, 'user', $question);
+
+        $provider = defined('AI_PROVIDER') ? AI_PROVIDER : 'fallback';
+        $api_key = defined('AI_API_KEY') ? AI_API_KEY : '';
+
+        $assistant_response = "";
+
+        if (($provider === 'gemini' || $provider === 'openai') && !empty($api_key)) {
+            $assistant_response = $this->askLLM($question, $provider, $api_key);
+        } else {
+            $assistant_response = $this->askFallback($question);
+        }
+
+        // Save Assistant Response
+        $this->saveMessage($conversation_id, 'assistant', $assistant_response);
+
+        // Update conversation timestamp for updated_at sorting
+        $stmt_update = $this->db->prepare("UPDATE chat_conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+        $stmt_update->execute(['id' => (int)$conversation_id]);
+
+        return $assistant_response;
+    }
+
+    /**
+     * Handle LLM-based tool/intent selection and structured raw data formatting.
      */
     private function askLLM($question, $provider, $api_key) {
-        $schema_desc = "
-        Tables in the IPMC Tamale EMS database:
-        1. departments (id, name, code, description)
-        2. employees (id, employee_id, first_name, last_name, email, role, staff_type, gender, phone, department_id, designation, joining_date, status)
-        3. leave_balances (id, employee_id, leave_type ['Annual', 'Sick', 'Casual', 'Maternity', 'Paternity', 'Study'], allocated, used)
-        4. leaves (id, employee_id, leave_type, start_date, end_date, days_requested, reason, status ['Pending', 'Approved', 'Rejected'], action_by, action_date, comments)
-        5. attendance (id, employee_id, date, status ['Present', 'Absent', 'Late', 'Permission'], time_in, time_out, notes)
-        6. appraisals (id, employee_id, appraiser_id, rating [1-5], comments, appraisal_period, appraisal_date)
-        7. announcements (id, title, content, created_by, created_at)
-        8. salaries (id, employee_id, basic_salary)
-        9. bonuses (id, employee_id, bonus_type, amount, date_given, reason)
-        10. salary_payments (id, employee_id, year, month, basic_salary, bonus_amount, total_earnings, status ['Unpaid', 'Paid'], paid_date)
-        ";
-
-        $role_rules = "
-        Logged-in user details:
-        Name: {$this->user_name}
-        Role: {$this->user_role}
-        ID (int): {$this->user_id}
-
-        Security Rule:
-        - If role is 'Employee', the user MUST ONLY be able to see their own data. Any query generated must strictly check that the employee_id/id matches {$this->user_id}. No access to any other employees' rows is allowed.
-        - If role is 'HR' or 'Admin', the user can see broad system-wide information.
-        ";
-
-        $prompt = "
-        You are a highly secure database assistant for the IPMC Tamale Campus Employee Management System (EMS).
-        Given the following database schema and user role details, analyze the user's question: \"{$question}\".
-
-        {$schema_desc}
-        {$role_rules}
-
-        Output guidelines:
-        1. Decide whether the question can be answered by generating a single safe, read-only SELECT SQL statement.
-        2. If YES, return the output in exactly this JSON format:
-        {
-           \"type\": \"sql\",
-           \"sql\": \"SELECT ... \",
-           \"params\": { \"param1\": \"val1\", ... }
-        }
-        Ensure you only use standard SELECT queries. Ensure you bind variables properly.
-        - For Employee role: ALWAYS enforce `employee_id = :my_id` or `e.id = :my_id` inside the WHERE clause and map `:my_id` to {$this->user_id}.
-
-        3. If NO (e.g. general greeting or irrelevant/malicious prompt), return:
-        {
-           \"type\": \"text\",
-           \"text\": \"Your friendly, professional text response here.\"
+        $tools = $this->getAvailableTools();
+        $tool_list_str = "";
+        foreach ($tools as $name => $meta) {
+            $tool_list_str .= "- {$name}: {$meta['desc']} (Roles allowed: " . implode(', ', $meta['roles']) . ")\n";
         }
 
-        Return ONLY valid raw JSON. No markdown code blocks, no backticks.
+        // System Prompt to extract user intent / map to tools
+        $intent_prompt = "
+        You are the IPMC Tamale Campus EMS AI Router.
+        Analyze the user's input question: \"{$question}\"
+        And map it to one of the approved tool functions if necessary.
+
+        Available tools:
+        {$tool_list_str}
+
+        User Session Details:
+        User Name: {$this->user_name}
+        User Role: {$this->user_role}
+
+        Rules:
+        - If the user query maps to one of the available tools, return EXACTLY this JSON format:
+        {
+           \"tool\": \"tool_name\",
+           \"args\": { \"department\": \"value\" }
+        }
+        (Only include 'args' if required. E.g. get_employees_by_department requires a department name/code argument)
+
+        - If the query does NOT map to any database tools (e.g. standard greetings, smalltalk, general guidance, or malicious prompts), return EXACTLY:
+        {
+           \"text\": \"Your friendly, professional, and helpful natural-language response.\"
+        }
+
+        Do NOT generate raw SQL queries under any circumstances. You must only select from the list of approved tools.
+        Respond ONLY with valid JSON. No markdown code blocks, no backticks.
         ";
 
         try {
             $response_raw = "";
             if ($provider === 'gemini') {
-                $response_raw = $this->callGeminiAPI($prompt, $api_key);
+                $response_raw = $this->callGeminiAPI($intent_prompt, $api_key);
             } else {
-                $response_raw = $this->callOpenAIAPI($prompt, $api_key);
+                $response_raw = $this->callOpenAIAPI($intent_prompt, $api_key);
             }
 
-            // Clean response
+            // Clean response blocks
             $response_raw = trim($response_raw);
             if (strpos($response_raw, '```json') !== false) {
                 $response_raw = str_replace(['```json', '```'], '', $response_raw);
                 $response_raw = trim($response_raw);
             }
 
-            $data = json_decode($response_raw, true);
-            if ($data && isset($data['type'])) {
-                if ($data['type'] === 'sql' && !empty($data['sql'])) {
-                    return $this->executeSafeSQL($data['sql'], $data['params'] ?? []);
-                } elseif ($data['type'] === 'text' && !empty($data['text'])) {
-                    return $data['text'];
+            $intent = json_decode($response_raw, true);
+
+            if ($intent) {
+                if (isset($intent['tool'])) {
+                    $tool_name = $intent['tool'];
+                    $args = $intent['args'] ?? [];
+
+                    // Invoke backend tool safely
+                    $tool_output = $this->executeTool($tool_name, $args);
+
+                    // Ask LLM to translate structured database outputs into pleasant conversational formats
+                    $formatting_prompt = "
+                    You are the IPMC Tamale Campus EMS Assistant.
+                    Answering the user query: \"{$question}\"
+                    The real database was safely queried, and returned the following verified data:
+                    " . json_encode($tool_output) . "
+
+                    System Rules:
+                    1. Use ONLY the verified data provided above.
+                    2. If the data is empty or indicates no records, state it politely. Do not invent details.
+                    3. Format numbers, dates, lists, and ratings nicely.
+                    4. Keep your answer brief, professional, concise, and helpful.
+                    5. Never reveal SQL syntax, raw database columns, or API details.
+                    ";
+
+                    if ($provider === 'gemini') {
+                        return $this->callGeminiAPI($formatting_prompt, $api_key);
+                    } else {
+                        return $this->callOpenAIAPI($formatting_prompt, $api_key);
+                    }
+
+                } elseif (isset($intent['text'])) {
+                    return $intent['text'];
                 }
             }
         } catch (Exception $e) {
-            // Log LLM call error and fallback gracefully
-            error_log("LLM API Call Error: " . $e->getMessage());
+            error_log("LLM Intent Router Exception: " . $e->getMessage());
         }
 
+        // Soft fallback if API limits or failures occur
         return $this->askFallback($question);
     }
 
     /**
-     * Call Google Gemini REST API.
+     * Executes the requested tool after checking strict backend permissions.
+     */
+    private function executeTool($tool_name, $args = []) {
+        $tools = $this->getAvailableTools();
+
+        // 1. Verify tool exists
+        if (!isset($tools[$tool_name])) {
+            return ['error' => 'Unsupported function request.'];
+        }
+
+        // 2. Strict PHP Role Permission Check (The ultimate security boundary)
+        $allowed_roles = $tools[$tool_name]['roles'];
+        if (!in_array($this->user_role, $allowed_roles)) {
+            error_log("SECURITY VIOLATION: User ID {$this->user_id} with role {$this->user_role} tried to execute restricted tool: {$tool_name}");
+            return ['error' => 'Access denied: You do not have permissions to query this data.'];
+        }
+
+        // 3. Execute approved backend method
+        switch ($tool_name) {
+            case 'get_my_profile':
+                return $this->get_my_profile();
+            case 'get_my_leave_balance':
+                return $this->get_my_leave_balance();
+            case 'get_my_leave_history':
+                return $this->get_my_leave_history();
+            case 'get_my_attendance':
+                return $this->get_my_attendance();
+            case 'get_my_appraisal':
+                return $this->get_my_appraisal();
+            case 'get_announcements':
+                return $this->get_announcements();
+            case 'get_employee_count':
+                return $this->get_employee_count();
+            case 'get_employees_by_department':
+                $dept = $args['department'] ?? '';
+                return $this->get_employees_by_department($dept);
+            case 'get_today_attendance':
+                return $this->get_today_attendance();
+            case 'get_pending_leave_requests':
+                return $this->get_pending_leave_requests();
+            case 'get_low_leave_balances':
+                return $this->get_low_leave_balances();
+            case 'get_recent_appraisals':
+                return $this->get_recent_appraisals();
+            default:
+                return ['error' => 'Function unimplemented.'];
+        }
+    }
+
+    /**
+     * Fallback local semantic router.
+     */
+    private function askFallback($question) {
+        $q = strtolower(trim($question));
+
+        // 1. Basic greetings
+        if (preg_match('/\b(hi|hello|hey|greetings|good morning|good afternoon)\b/', $q)) {
+            return "Hello, {$this->user_name}! I am your IPMC Tamale Campus EMS Assistant. How can I assist you with your records today?";
+        }
+
+        // 2. Announcements
+        if (preg_match('/\b(announcement|notice|announcements|news|bulletin)\b/', $q)) {
+            $data = $this->get_announcements();
+            if (empty($data)) {
+                return "There are no announcements posted on the bulletin board currently.";
+            }
+            $res = "Here are the recent institutional announcements:\n";
+            foreach ($data as $r) {
+                $date = date('M d, Y', strtotime($r['created_at']));
+                $res .= "📢 **{$r['title']}** ({$date})\n   {$r['content']}\n\n";
+            }
+            return trim($res);
+        }
+
+        // 3. Employee Profile
+        if (preg_match('/\b(profile|my info|my details|who am i|my description)\b/', $q)) {
+            $data = $this->get_my_profile();
+            if (isset($data['error'])) return $data['error'];
+            return "Here is your profile information:\n" .
+                   "• **Name:** {$data['first_name']} {$data['last_name']}\n" .
+                   "• **ID Code:** {$data['employee_id']}\n" .
+                   "• **Email:** {$data['email']}\n" .
+                   "• **Role / Designation:** {$data['role']} - {$data['designation']}\n" .
+                   "• **Staff Type:** {$data['staff_type']}\n" .
+                   "• **Phone:** {$data['phone']}\n" .
+                   "• **Joining Date:** {$data['joining_date']}";
+        }
+
+        // 4. Employee Leave Balances
+        if (preg_match('/\b(leave balance|leave balances|days left|annual leave|sick leave|casual leave|maternity leave|paternity leave|study leave|leave days|days remaining|how many leave|remaining leave)\b/', $q)) {
+            $data = $this->get_my_leave_balance();
+            if (isset($data['error'])) return $data['error'];
+            if (empty($data)) return "You do not have any leave balances allocated yet.";
+
+            $res = "Your current leave balances are:\n";
+            foreach ($data as $r) {
+                $rem = $r['allocated'] - $r['used'];
+                $res .= "• **{$r['leave_type']} Leave:** {$rem} days remaining (Allocated: {$r['allocated']}, Used: {$r['used']})\n";
+            }
+            return trim($res);
+        }
+
+        // 5. Employee Leave History
+        if (preg_match('/\b(my leave history|my leave requests|my applied leaves|applied for leave|leave history)\b/', $q)) {
+            $data = $this->get_my_leave_history();
+            if (isset($data['error'])) return $data['error'];
+            if (empty($data)) return "No leave application history found for you.";
+
+            $res = "Your recent leave applications:\n";
+            foreach ($data as $r) {
+                $comment_info = !empty($r['comments']) ? " (Comments: \"{$r['comments']}\")" : "";
+                $res .= "• **{$r['start_date']}** to **{$r['end_date']}** ({$r['days_requested']} days, Type: {$r['leave_type']}) - **Status: {$r['status']}**{$comment_info}\n";
+            }
+            return trim($res);
+        }
+
+        // 6. Employee Attendance
+        if (preg_match('/\b(attendance|present|absent|late|worked|time in|time out)\b/', $q)) {
+            $data = $this->get_my_attendance();
+            if (isset($data['error'])) return $data['error'];
+            if (empty($data)) return "No attendance records found for you in the system.";
+
+            $res = "Here is your latest attendance activity:\n";
+            foreach ($data as $r) {
+                $time_info = $r['time_in'] ? " (In: {$r['time_in']} | Out: {$r['time_out']})" : "";
+                $res .= "• **{$r['date']}**: {$r['status']}{$time_info}\n";
+            }
+            return trim($res);
+        }
+
+        // 7. Employee Appraisal
+        if (preg_match('/\b(appraisal|rating|performance|score|appraised)\b/', $q)) {
+            $data = $this->get_my_appraisal();
+            if (isset($data['error'])) return $data['error'];
+            if (empty($data)) return "You have not been appraised yet for any period.";
+
+            return "Your latest appraisal rating is **{$data['rating']}/5** for **{$data['appraisal_period']}**.\n" .
+                   "**HR/Admin Comments:** \"{$data['comments']}\" (Date: {$data['appraisal_date']})";
+        }
+
+        // 8. HR/Admin tools
+        if ($this->user_role === 'Admin' || $this->user_role === 'HR') {
+            // Pending Leaves
+            if (preg_match('/\b(pending leave|pending requests|leaves pending|leave requests)\b/', $q)) {
+                $data = $this->get_pending_leave_requests();
+                if (isset($data['error'])) return $data['error'];
+                $res = "There are currently **{$data['total_pending']} pending** leave requests awaiting decision.\n";
+                if (!empty($data['list'])) {
+                    $res .= "Details:\n";
+                    foreach ($data['list'] as $r) {
+                        $res .= "• **{$r['first_name']} {$r['last_name']}**: {$r['days_requested']} days of {$r['leave_type']} ({$r['start_date']} to {$r['end_date']})\n";
+                    }
+                }
+                return trim($res);
+            }
+
+            // List employees in department
+            if (preg_match('/\b(department|dept|list employees in|employees in)\b/', $q)) {
+                // Try to extract department name/code
+                $stmt = $this->db->query("SELECT name, code FROM departments");
+                $depts = $stmt->fetchAll();
+                $matched_dept_str = "";
+
+                foreach ($depts as $d) {
+                    $dname = strtolower($d['name']);
+                    $dcode = strtolower($d['code']);
+                    if (strpos($q, $dname) !== false || strpos($q, $dcode) !== false || (strpos($q, 'it') !== false && $dcode === 'cs-it')) {
+                        $matched_dept_str = $d['name'];
+                        break;
+                    }
+                }
+
+                if (!empty($matched_dept_str)) {
+                    $data = $this->get_employees_by_department($matched_dept_str);
+                    if (isset($data['error'])) return $data['error'];
+                    if (empty($data)) return "No active employees found in the **{$matched_dept_str}** department.";
+
+                    $res = "Active employees in the **{$matched_dept_str}** department:\n";
+                    foreach ($data as $index => $r) {
+                        $num = $index + 1;
+                        $res .= "{$num}. **{$r['first_name']} {$r['last_name']}** - {$r['designation']}\n";
+                    }
+                    return trim($res);
+                }
+            }
+
+            // Absent today
+            if (preg_match('/\b(absent today|who was absent|who is absent)\b/', $q)) {
+                $data = $this->get_today_attendance();
+                if (isset($data['error'])) return $data['error'];
+                if (empty($data['absent'])) return "Great news! No employees are marked as **Absent** today.";
+
+                $res = "Employees marked as **Absent** today:\n";
+                foreach ($data['absent'] as $r) {
+                    $res .= "• **{$r['first_name']} {$r['last_name']}** ({$r['employee_id']})\n";
+                }
+                return trim($res);
+            }
+
+            // Leave balance below 5 days
+            if (preg_match('/\b(leave balance below|below 5|low leave balance)\b/', $q)) {
+                $data = $this->get_low_leave_balances();
+                if (isset($data['error'])) return $data['error'];
+                if (empty($data)) return "All active employees have 5 or more leave days remaining.";
+
+                $res = "Active staff with less than 5 remaining leave days:\n";
+                foreach ($data as $r) {
+                    $res .= "• **{$r['first_name']} {$r['last_name']}**: {$r['remaining']} days left ({$r['leave_type']} Leave)\n";
+                }
+                return trim($res);
+            }
+
+            // Total Active Employees
+            if (preg_match('/\b(how many active|total employees|active employees|number of active|how many employees)\b/', $q)) {
+                $data = $this->get_employee_count();
+                if (isset($data['error'])) return $data['error'];
+
+                return "IPMC Tamale Campus currently has **{$data['total']} active employees**.\n" .
+                       "- Academic Staff: **{$data['academic']}**\n" .
+                       "- Non-Academic Staff: **{$data['non_academic']}**";
+            }
+
+            // Recent Appraisals
+            if (preg_match('/\b(recent appraisals|recent performance|list appraisals|appraisals list)\b/', $q)) {
+                $data = $this->get_recent_appraisals();
+                if (isset($data['error'])) return $data['error'];
+                if (empty($data)) return "No appraisal records found in the system.";
+
+                $res = "Latest appraisals logged:\n";
+                foreach ($data as $r) {
+                    $res .= "• **{$r['first_name']} {$r['last_name']}**: Rated **{$r['rating']}/5** for period {$r['appraisal_period']}. Comments: \"{$r['comments']}\"\n";
+                }
+                return trim($res);
+            }
+        }
+
+        // Generic reply
+        return "I'm here to assist you with the IPMC Tamale Campus EMS database. You can ask me about leaves, attendance, appraisals, or announcements. For security and role restrictions, I can only search and read institutional data.";
+    }
+
+    /**
+     * API Call to Gemini.
      */
     private function callGeminiAPI($prompt, $api_key) {
         $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'gemini-1.5-flash';
@@ -137,9 +529,6 @@ class AIChatAssistant {
                         ['text' => $prompt]
                     ]
                 ]
-            ],
-            'generationConfig' => [
-                'responseMimeType' => 'application/json'
             ]
         ];
 
@@ -167,7 +556,7 @@ class AIChatAssistant {
     }
 
     /**
-     * Call OpenAI Chat Completion API.
+     * API Call to OpenAI.
      */
     private function callOpenAIAPI($prompt, $api_key) {
         $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'gpt-4o-mini';
@@ -178,7 +567,6 @@ class AIChatAssistant {
             'messages' => [
                 ['role' => 'user', 'content' => $prompt]
             ],
-            'response_format' => ['type' => 'json_object'],
             'temperature' => 0.1
         ];
 
@@ -206,297 +594,162 @@ class AIChatAssistant {
         throw new Exception("Invalid response from OpenAI API: " . $response);
     }
 
-    /**
-     * Sanitize, inspect and execute safe generated read-only SQL queries.
-     */
-    private function executeSafeSQL($sql, $params = []) {
-        $clean_sql = trim($sql);
+    // ==========================================
+    // APPROVED DATABASE SECURE PHP TOOLS (PREPARED STATEMENTS)
+    // ==========================================
 
-        // Security check 1: SQL must start with SELECT
-        if (!preg_match('/^select\b/i', $clean_sql)) {
-            return "Security violation: Only read-only queries are authorized.";
-        }
-
-        // Security check 2: Deny write operations
-        $dangerous_patterns = ['insert', 'update', 'delete', 'drop', 'alter', 'truncate', 'replace', 'grant', 'revoke'];
-        foreach ($dangerous_patterns as $pattern) {
-            if (preg_match('/\b' . $pattern . '\b/i', $clean_sql)) {
-                return "Security violation: Unsupported query format detected.";
-            }
-        }
-
-        // Security check 3: Row level security for employees
-        if ($this->user_role === 'Employee') {
-            // Employee must strictly see their own records.
-            // Check if the query references the user_id variable, or strictly filter the query to lock down output.
-            $has_user_binding = false;
-            foreach ($params as $key => $val) {
-                if ((int)$val === $this->user_id) {
-                    $has_user_binding = true;
-                }
-            }
-
-            if (!$has_user_binding) {
-                return "Access denied: Employees can only view their own records.";
-            }
-        }
-
-        try {
-            $stmt = $this->db->prepare($clean_sql);
-            $stmt->execute($params);
-            $results = $stmt->fetchAll();
-
-            if (empty($results)) {
-                return "No matching records found for your request.";
-            }
-
-            return $this->formatQueryResults($results);
-        } catch (Exception $e) {
-            error_log("Secure LLM SQL Execution Failed: " . $e->getMessage());
-            return "I understood your intent, but encountered an issue retrieving the data. Could you please rephrase the question?";
-        }
+    public function get_my_profile() {
+        $stmt = $this->db->prepare("
+            SELECT e.first_name, e.last_name, e.employee_id, e.email, e.role, e.staff_type, e.phone, e.designation, e.joining_date
+            FROM employees e
+            WHERE e.id = :user_id
+        ");
+        $stmt->execute(['user_id' => $this->user_id]);
+        return $stmt->fetch() ?: ['error' => 'Profile not found.'];
     }
 
-    /**
-     * Local hybrid rule-based semantic parser for standard questions.
-     */
-    private function askFallback($question) {
-        $q = strtolower(trim($question));
-
-        // 1. Basic greetings
-        if (preg_match('/\b(hi|hello|hey|greetings|good morning|good afternoon)\b/', $q)) {
-            return "Hello, {$this->user_name}! I am your IPMC Tamale EMS Assistant. How can I assist you with your records today?";
-        }
-
-        // 2. Announcements
-        if (preg_match('/\b(announcement|notice|announcements|news|bulletin)\b/', $q)) {
-            $stmt = $this->db->query("SELECT title, content, created_at FROM announcements ORDER BY created_at DESC LIMIT 3");
-            $rows = $stmt->fetchAll();
-            if (empty($rows)) {
-                return "There are no announcements posted on the bulletin board currently.";
-            }
-            $res = "Here are the recent institutional announcements:\n";
-            foreach ($rows as $r) {
-                $date = date('M d, Y', strtotime($r['created_at']));
-                $res .= "📢 **{$r['title']}** ({$date})\n   {$r['content']}\n\n";
-            }
-            return trim($res);
-        }
-
-        // --- EMPLOYEE-SPECIFIC QUESTIONS ---
-        if ($this->user_role === 'Employee') {
-            // Leave Balances
-            if (preg_match('/\b(leave balance|leave balances|days left|annual leave|sick leave|casual leave|maternity leave|paternity leave|study leave|leave days|days remaining|how many leave|remaining leave)\b/', $q)) {
-                $stmt = $this->db->prepare("SELECT leave_type, allocated, used FROM leave_balances WHERE employee_id = :emp_id");
-                $stmt->execute(['emp_id' => $this->user_id]);
-                $rows = $stmt->fetchAll();
-
-                if (empty($rows)) {
-                    return "You do not have any leave balances allocated yet.";
-                }
-
-                $res = "Your current leave balances are:\n";
-                foreach ($rows as $r) {
-                    $rem = $r['allocated'] - $r['used'];
-                    $res .= "• **{$r['leave_type']} Leave:** {$rem} days remaining (Allocated: {$r['allocated']}, Used: {$r['used']})\n";
-                }
-                return trim($res);
-            }
-
-            // Attendance
-            if (preg_match('/\b(attendance|present|absent|late|worked|time in|time out)\b/', $q)) {
-                $stmt = $this->db->prepare("
-                    SELECT date, status, time_in, time_out
-                    FROM attendance
-                    WHERE employee_id = :emp_id
-                    ORDER BY date DESC LIMIT 5
-                ");
-                $stmt->execute(['emp_id' => $this->user_id]);
-                $rows = $stmt->fetchAll();
-
-                if (empty($rows)) {
-                    return "No attendance records found for you in the system.";
-                }
-
-                $res = "Here is your latest attendance activity:\n";
-                foreach ($rows as $r) {
-                    $time_info = $r['time_in'] ? " (In: {$r['time_in']} | Out: {$r['time_out']})" : "";
-                    $res .= "• **{$r['date']}**: {$r['status']}{$time_info}\n";
-                }
-                return trim($res);
-            }
-
-            // Appraisal
-            if (preg_match('/\b(appraisal|rating|performance|score|appraised)\b/', $q)) {
-                $stmt = $this->db->prepare("
-                    SELECT rating, comments, appraisal_period, appraisal_date
-                    FROM appraisals
-                    WHERE employee_id = :emp_id
-                    ORDER BY appraisal_date DESC LIMIT 1
-                ");
-                $stmt->execute(['emp_id' => $this->user_id]);
-                $r = $stmt->fetch();
-
-                if (!$r) {
-                    return "You have not been appraised yet for any period.";
-                }
-
-                return "Your latest appraisal rating is **{$r['rating']}/5** for **{$r['appraisal_period']}**.\n" .
-                       "**HR/Admin Comments:** \"{$r['comments']}\" (Date: {$r['appraisal_date']})";
-            }
-        }
-
-        // --- HR / ADMIN SPECIFIC QUESTIONS ---
-        if ($this->user_role === 'Admin' || $this->user_role === 'HR') {
-            // Pending Leaves
-            if (preg_match('/\b(pending leave|pending requests|leaves pending|leave requests)\b/', $q)) {
-                $stmt = $this->db->query("
-                    SELECT COUNT(*) as cnt
-                    FROM leaves
-                    WHERE status = 'Pending'
-                ");
-                $cnt = $stmt->fetchColumn();
-                return "There are currently **{$cnt} pending** leave requests awaiting decision in the system.";
-            }
-
-            // List employees in department
-            if (preg_match('/\b(department|dept|list employees in|employees in)\b/', $q)) {
-                // Match department name or code from keywords
-                $stmt = $this->db->query("SELECT id, name, code FROM departments");
-                $depts = $stmt->fetchAll();
-                $matched_dept = null;
-
-                foreach ($depts as $d) {
-                    $dname = strtolower($d['name']);
-                    $dcode = strtolower($d['code']);
-                    if (strpos($q, $dname) !== false || strpos($q, $dcode) !== false || (strpos($q, 'it') !== false && $dcode === 'cs-it')) {
-                        $matched_dept = $d;
-                        break;
-                    }
-                }
-
-                if ($matched_dept) {
-                    $stmt = $this->db->prepare("
-                        SELECT first_name, last_name, designation
-                        FROM employees
-                        WHERE department_id = :dept_id AND status = 'Active'
-                    ");
-                    $stmt->execute(['dept_id' => $matched_dept['id']]);
-                    $rows = $stmt->fetchAll();
-
-                    if (empty($rows)) {
-                        return "There are no active employees currently assigned to the **{$matched_dept['name']}** department.";
-                    }
-
-                    $res = "Active employees in the **{$matched_dept['name']}** department:\n";
-                    foreach ($rows as $index => $r) {
-                        $num = $index + 1;
-                        $res .= "{$num}. **{$r['first_name']} {$r['last_name']}** - {$r['designation']}\n";
-                    }
-                    return trim($res);
-                }
-            }
-
-            // Absent today
-            if (preg_match('/\b(absent today|who was absent|who is absent)\b/', $q)) {
-                $stmt = $this->db->prepare("
-                    SELECT e.first_name, e.last_name, e.employee_id
-                    FROM attendance a
-                    JOIN employees e ON a.employee_id = e.id
-                    WHERE a.date = CURRENT_DATE() AND a.status = 'Absent'
-                ");
-                $stmt->execute();
-                $rows = $stmt->fetchAll();
-
-                if (empty($rows)) {
-                    return "Great news! No employees are marked as **Absent** today.";
-                }
-
-                $res = "Employees marked as **Absent** today:\n";
-                foreach ($rows as $r) {
-                    $res .= "• **{$r['first_name']} {$r['last_name']}** ({$r['employee_id']})\n";
-                }
-                return trim($res);
-            }
-
-            // Leave balance below 5 days
-            if (preg_match('/\b(leave balance below|below 5|low leave balance)\b/', $q)) {
-                $stmt = $this->db->query("
-                    SELECT e.first_name, e.last_name, lb.leave_type, (lb.allocated - lb.used) as remaining
-                    FROM leave_balances lb
-                    JOIN employees e ON lb.employee_id = e.id
-                    WHERE (lb.allocated - lb.used) < 5 AND e.status = 'Active'
-                    ORDER BY remaining ASC
-                ");
-                $rows = $stmt->fetchAll();
-
-                if (empty($rows)) {
-                    return "All active employees have 5 or more leave days remaining.";
-                }
-
-                $res = "Active staff with less than 5 remaining leave days:\n";
-                foreach ($rows as $r) {
-                    $res .= "• **{$r['first_name']} {$r['last_name']}**: {$r['remaining']} days left ({$r['leave_type']} Leave)\n";
-                }
-                return trim($res);
-            }
-
-            // Total Active Employees
-            if (preg_match('/\b(how many active|total employees|active employees|number of active|how many employees)\b/', $q)) {
-                $total = $this->db->query("SELECT COUNT(*) FROM employees WHERE status = 'Active'")->fetchColumn();
-                $academic = $this->db->query("SELECT COUNT(*) FROM employees WHERE status = 'Active' AND staff_type = 'Academic'")->fetchColumn();
-                $non_academic = $this->db->query("SELECT COUNT(*) FROM employees WHERE status = 'Active' AND staff_type = 'Non-Academic'")->fetchColumn();
-
-                return "IPMC Tamale Campus currently has **{$total} active employees**.\n" .
-                       "- Academic Staff: **{$academic}**\n" .
-                       "- Non-Academic Staff: **{$non_academic}**";
-            }
-
-            // Recent Appraisals
-            if (preg_match('/\b(recent appraisals|recent performance|list appraisals|appraisals list)\b/', $q)) {
-                $stmt = $this->db->query("
-                    SELECT e.first_name, e.last_name, a.rating, a.comments, a.appraisal_period
-                    FROM appraisals a
-                    JOIN employees e ON a.employee_id = e.id
-                    ORDER BY a.appraisal_date DESC LIMIT 5
-                ");
-                $rows = $stmt->fetchAll();
-
-                if (empty($rows)) {
-                    return "No appraisal records found in the system.";
-                }
-
-                $res = "Latest appraisals logged:\n";
-                foreach ($rows as $r) {
-                    $res .= "• **{$r['first_name']} {$r['last_name']}**: Rated **{$r['rating']}/5** for period {$r['appraisal_period']}. Comments: \"{$r['comments']}\"\n";
-                }
-                return trim($res);
-            }
-        }
-
-        // Generic friendly reply
-        return "I'm here to assist you with the IPMC Tamale Campus EMS database. You can ask me about leaves, attendance, appraisals, or announcements. For security and role restrictions, I can only search and read institutional data.";
+    public function get_my_leave_balance() {
+        $stmt = $this->db->prepare("
+            SELECT leave_type, allocated, used
+            FROM leave_balances
+            WHERE employee_id = :user_id
+        ");
+        $stmt->execute(['user_id' => $this->user_id]);
+        return $stmt->fetchAll();
     }
 
-    /**
-     * Format a generic multi-dimensional query result array into clear, readable text.
-     */
-    private function formatQueryResults($results) {
-        $res = "Here is the information I retrieved based on your request:\n\n";
-        foreach ($results as $index => $row) {
-            $num = $index + 1;
-            $res .= "Entry #{$num}:\n";
-            foreach ($row as $col => $val) {
-                // Do not display columns with ID values or system hashes for security
-                if ($col === 'id' || strpos($col, 'password') !== false || strpos($col, 'hash') !== false) {
-                    continue;
-                }
-                $formatted_col = ucwords(str_replace('_', ' ', $col));
-                $res .= "• **{$formatted_col}**: {$val}\n";
-            }
-            $res .= "\n";
-        }
-        return trim($res);
+    public function get_my_leave_history() {
+        $stmt = $this->db->prepare("
+            SELECT leave_type, start_date, end_date, days_requested, reason, status, comments
+            FROM leaves
+            WHERE employee_id = :user_id
+            ORDER BY start_date DESC LIMIT 5
+        ");
+        $stmt->execute(['user_id' => $this->user_id]);
+        return $stmt->fetchAll();
+    }
+
+    public function get_my_attendance() {
+        $stmt = $this->db->prepare("
+            SELECT date, status, time_in, time_out
+            FROM attendance
+            WHERE employee_id = :user_id
+            ORDER BY date DESC LIMIT 5
+        ");
+        $stmt->execute(['user_id' => $this->user_id]);
+        return $stmt->fetchAll();
+    }
+
+    public function get_my_appraisal() {
+        $stmt = $this->db->prepare("
+            SELECT rating, comments, appraisal_period, appraisal_date
+            FROM appraisals
+            WHERE employee_id = :user_id
+            ORDER BY appraisal_date DESC LIMIT 1
+        ");
+        $stmt->execute(['user_id' => $this->user_id]);
+        return $stmt->fetch() ?: [];
+    }
+
+    public function get_announcements() {
+        $stmt = $this->db->prepare("
+            SELECT title, content, created_at
+            FROM announcements
+            ORDER BY created_at DESC LIMIT 3
+        ");
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // --- HR / ADMIN TOOLS ---
+
+    public function get_employee_count() {
+        $total = $this->db->query("SELECT COUNT(*) FROM employees WHERE status = 'Active'")->fetchColumn();
+        $academic = $this->db->query("SELECT COUNT(*) FROM employees WHERE status = 'Active' AND staff_type = 'Academic'")->fetchColumn();
+        $non_academic = $this->db->query("SELECT COUNT(*) FROM employees WHERE status = 'Active' AND staff_type = 'Non-Academic'")->fetchColumn();
+        return [
+            'total' => (int)$total,
+            'academic' => (int)$academic,
+            'non_academic' => (int)$non_academic
+        ];
+    }
+
+    public function get_employees_by_department($department) {
+        $stmt = $this->db->prepare("
+            SELECT e.first_name, e.last_name, e.designation
+            FROM employees e
+            JOIN departments d ON e.department_id = d.id
+            WHERE (d.name LIKE :dept OR d.code LIKE :dept) AND e.status = 'Active'
+        ");
+        $stmt->execute(['dept' => "%" . $department . "%"]);
+        return $stmt->fetchAll();
+    }
+
+    public function get_today_attendance() {
+        // Fetch absent today
+        $stmt_absent = $this->db->prepare("
+            SELECT e.first_name, e.last_name, e.employee_id
+            FROM attendance a
+            JOIN employees e ON a.employee_id = e.id
+            WHERE a.date = CURRENT_DATE() AND a.status = 'Absent'
+        ");
+        $stmt_absent->execute();
+        $absent = $stmt_absent->fetchAll();
+
+        // Fetch present today
+        $stmt_present = $this->db->prepare("
+            SELECT e.first_name, e.last_name, e.employee_id
+            FROM attendance a
+            JOIN employees e ON a.employee_id = e.id
+            WHERE a.date = CURRENT_DATE() AND a.status = 'Present'
+        ");
+        $stmt_present->execute();
+        $present = $stmt_present->fetchAll();
+
+        return [
+            'date' => date('Y-m-d'),
+            'absent' => $absent,
+            'present' => $present
+        ];
+    }
+
+    public function get_pending_leave_requests() {
+        $stmt_cnt = $this->db->query("SELECT COUNT(*) FROM leaves WHERE status = 'Pending'");
+        $total_pending = (int)$stmt_cnt->fetchColumn();
+
+        $stmt_list = $this->db->query("
+            SELECT e.first_name, e.last_name, l.leave_type, l.start_date, l.end_date, l.days_requested
+            FROM leaves l
+            JOIN employees e ON l.employee_id = e.id
+            WHERE l.status = 'Pending'
+        ");
+        $list = $stmt_list->fetchAll();
+
+        return [
+            'total_pending' => $total_pending,
+            'list' => $list
+        ];
+    }
+
+    public function get_low_leave_balances() {
+        $stmt = $this->db->query("
+            SELECT e.first_name, e.last_name, lb.leave_type, (lb.allocated - lb.used) as remaining
+            FROM leave_balances lb
+            JOIN employees e ON lb.employee_id = e.id
+            WHERE (lb.allocated - lb.used) < 5 AND e.status = 'Active'
+            ORDER BY remaining ASC
+        ");
+        return $stmt->fetchAll();
+    }
+
+    public function get_recent_appraisals() {
+        $stmt = $this->db->query("
+            SELECT e.first_name, e.last_name, a.rating, a.comments, a.appraisal_period
+            FROM appraisals a
+            JOIN employees e ON a.employee_id = e.id
+            ORDER BY a.appraisal_date DESC LIMIT 5
+        ");
+        return $stmt->fetchAll();
     }
 }
 ?>

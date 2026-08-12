@@ -23,7 +23,7 @@
         </div>
 
         <div class="ai-chat-body" id="aiChatBody">
-            <div class="chat-message ai">Hello, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>! I am your IPMC Campus AI. How can I assist you with your leaves, attendance, appraisals, or general records today?</div>
+            <div class="chat-message ai">Loading your secure conversation history...</div>
         </div>
 
         <div class="ai-chat-footer">
@@ -46,13 +46,55 @@
     <!-- Custom jQuery-free Responsive Toggle Script with mobile overlay backdrop support -->
     <script>
         // Global variables for AI chat history persistence across pages
-        function clearAIChatHistory(e) {
+        async function loadAIChatHistory() {
+            const body = document.getElementById('aiChatBody');
+            if (!body) return;
+
+            try {
+                const response = await fetch('ai-chat-api.php?action=load');
+                if (response.ok) {
+                    const data = await response.json();
+                    body.innerHTML = '';
+
+                    if (!data.history || data.history.length === 0) {
+                        body.innerHTML = `<div class="chat-message ai">Hello, ${data.user_name}! I am your IPMC Campus AI. How can I assist you with your leaves, attendance, appraisals, or general records today?</div>`;
+                    } else {
+                        data.history.forEach(msg => {
+                            const msgHtml = document.createElement('div');
+                            msgHtml.className = `chat-message ${msg.role === 'user' ? 'user' : 'ai'}`;
+                            msgHtml.innerText = msg.message;
+                            body.appendChild(msgHtml);
+                        });
+                    }
+                } else {
+                    body.innerHTML = '<div class="chat-message ai text-danger">Failed to load secure chat history. Please refresh the page.</div>';
+                }
+            } catch (err) {
+                body.innerHTML = '<div class="chat-message ai text-danger">Network error connecting to AI services.</div>';
+            } finally {
+                body.scrollTop = body.scrollHeight;
+            }
+        }
+
+        async function clearAIChatHistory(e) {
             if (e) e.preventDefault();
             const body = document.getElementById('aiChatBody');
-            if (body) {
-                const userName = "<?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>";
-                body.innerHTML = `<div class="chat-message ai">Hello, ${userName}! Chat history cleared. How can I assist you with your records today?</div>`;
-                sessionStorage.removeItem('ipmc_ai_chat_history');
+            const userName = "<?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>";
+
+            if (!body) return;
+            body.innerHTML = '<div class="chat-message ai">Clearing conversation history...</div>';
+
+            try {
+                const response = await fetch('ai-chat-api.php?action=clear', { method: 'POST' });
+                if (response.ok) {
+                    body.innerHTML = `<div class="chat-message ai">Hello, ${userName}! Chat history cleared. How can I assist you with your records today?</div>`;
+                } else {
+                    body.innerHTML = '<div class="chat-message ai text-danger">Error clearing chat history.</div>';
+                }
+            } catch (err) {
+                body.innerHTML = '<div class="chat-message ai text-danger">Network error clearing chat history.</div>';
+            } finally {
+                body.scrollTop = body.scrollHeight;
             }
         }
 
@@ -87,7 +129,7 @@
             sendBtn.disabled = true;
 
             try {
-                const response = await fetch('ai-chat-api.php', {
+                const response = await fetch('ai-chat-api.php?action=send', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -123,18 +165,12 @@
             } finally {
                 sendBtn.disabled = false;
                 body.scrollTop = body.scrollHeight;
-                // Save state in Session Storage
-                sessionStorage.setItem('ipmc_ai_chat_history', body.innerHTML);
             }
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            // Restore persistent session history if available
-            const savedHistory = sessionStorage.getItem('ipmc_ai_chat_history');
-            const chatBody = document.getElementById('aiChatBody');
-            if (savedHistory && chatBody) {
-                chatBody.innerHTML = savedHistory;
-            }
+            // Load persistent isolated chat history securely from database
+            loadAIChatHistory();
 
             // Launcher and close toggle animations
             const launcher = document.getElementById('aiChatLauncher');
