@@ -230,3 +230,21 @@
 [Tue Aug 11 18:47:28 2026] 127.0.0.1:54050 [200]: GET /uploads/default.png
 [Tue Aug 11 18:47:28 2026] 127.0.0.1:54038 Closing
 [Tue Aug 11 18:47:28 2026] 127.0.0.1:54050 Closing
+[Wed Aug 12 15:22:51 2026] 127.0.0.1:49486 Accepted
+[Wed Aug 12 15:22:51 2026] 127.0.0.1:49486 [200]: GET /login.php
+[Wed Aug 12 15:22:51 2026] 127.0.0.1:49486 Closing
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49500 Accepted
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49500 [302]: POST /login.php
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49500 Closing
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49510 Accepted
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49510 [200]: GET /dashboard.php
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49510 Closing
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49512 Accepted
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49516 Accepted
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49512 [200]: GET /css/style.css
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49516 [200]: GET /uploads/default.png
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49512 Closing
+[Wed Aug 12 15:22:53 2026] 127.0.0.1:49516 Closing
+[Wed Aug 12 15:22:57 2026] 127.0.0.1:56942 Accepted
+[Wed Aug 12 15:22:57 2026] 127.0.0.1:56942 [200]: POST /ai-chat-api.php
+[Wed Aug 12 15:22:57 2026] 127.0.0.1:56942 Closing

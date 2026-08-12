@@ -2,12 +2,161 @@
         </div> <!-- End #content -->
     </div> <!-- End #wrapper -->
 
+    <?php if (isset($_SESSION['user_id'])): ?>
+    <!-- AI Chat Floating Widget -->
+    <button class="ai-chat-launcher" id="aiChatLauncher" title="Ask AI Assistant">
+        <i class="fa-solid fa-robot fa-lg"></i>
+    </button>
+
+    <div class="ai-chat-box" id="aiChatBox">
+        <div class="ai-chat-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-robot"></i>
+                <div>
+                    <h6 class="mb-0">IPMC Campus AI</h6>
+                    <span class="badge">Virtual Agent</span>
+                </div>
+            </div>
+            <button class="chat-close-btn" id="aiChatClose" aria-label="Close Chat">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="ai-chat-body" id="aiChatBody">
+            <div class="chat-message ai">Hello, <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>! I am your IPMC Campus AI. How can I assist you with your leaves, attendance, appraisals, or general records today?</div>
+        </div>
+
+        <div class="ai-chat-footer">
+            <form id="aiChatForm" onsubmit="submitAIChat(event)">
+                <div class="ai-chat-input-wrapper">
+                    <input type="text" class="ai-chat-input" id="aiChatInput" placeholder="Type your question..." autocomplete="off" required>
+                    <button type="submit" class="ai-chat-send-btn" id="aiChatSendBtn" aria-label="Send Message">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+            <div class="ai-chat-meta">Powered by IPMC AI • <a href="#" onclick="clearAIChatHistory(event)" class="text-decoration-none">Clear Chat</a></div>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Bootstrap 5 JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Custom jQuery-free Responsive Toggle Script with mobile overlay backdrop support -->
     <script>
+        // Global variables for AI chat history persistence across pages
+        function clearAIChatHistory(e) {
+            if (e) e.preventDefault();
+            const body = document.getElementById('aiChatBody');
+            if (body) {
+                const userName = "<?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>";
+                body.innerHTML = `<div class="chat-message ai">Hello, ${userName}! Chat history cleared. How can I assist you with your records today?</div>`;
+                sessionStorage.removeItem('ipmc_ai_chat_history');
+            }
+        }
+
+        async function submitAIChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('aiChatInput');
+            const body = document.getElementById('aiChatBody');
+            const sendBtn = document.getElementById('aiChatSendBtn');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            // Render User Bubble
+            const userMsgHtml = document.createElement('div');
+            userMsgHtml.className = 'chat-message user';
+            userMsgHtml.innerText = message;
+            body.appendChild(userMsgHtml);
+            input.value = '';
+
+            // Auto Scroll
+            body.scrollTop = body.scrollHeight;
+
+            // Render Typing Indicator
+            const typingHtml = document.createElement('div');
+            typingHtml.className = 'ai-typing-indicator';
+            typingHtml.id = 'aiTypingIndicator';
+            typingHtml.innerHTML = '<span></span><span></span><span></span>';
+            body.appendChild(typingHtml);
+            body.scrollTop = body.scrollHeight;
+
+            // Disable Send button during operation
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch('ai-chat-api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+
+                // Remove typing indicator
+                const indicator = document.getElementById('aiTypingIndicator');
+                if (indicator) indicator.remove();
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const aiMsgHtml = document.createElement('div');
+                    aiMsgHtml.className = 'chat-message ai';
+                    aiMsgHtml.innerText = data.reply;
+                    body.appendChild(aiMsgHtml);
+                } else {
+                    const errData = await response.json();
+                    const aiMsgHtml = document.createElement('div');
+                    aiMsgHtml.className = 'chat-message ai text-danger';
+                    aiMsgHtml.innerText = `Error: ${errData.error || 'Server connection error.'}`;
+                    body.appendChild(aiMsgHtml);
+                }
+            } catch (err) {
+                const indicator = document.getElementById('aiTypingIndicator');
+                if (indicator) indicator.remove();
+
+                const aiMsgHtml = document.createElement('div');
+                aiMsgHtml.className = 'chat-message ai text-danger';
+                aiMsgHtml.innerText = 'Unable to connect to the AI service. Please try again.';
+                body.appendChild(aiMsgHtml);
+            } finally {
+                sendBtn.disabled = false;
+                body.scrollTop = body.scrollHeight;
+                // Save state in Session Storage
+                sessionStorage.setItem('ipmc_ai_chat_history', body.innerHTML);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
+            // Restore persistent session history if available
+            const savedHistory = sessionStorage.getItem('ipmc_ai_chat_history');
+            const chatBody = document.getElementById('aiChatBody');
+            if (savedHistory && chatBody) {
+                chatBody.innerHTML = savedHistory;
+            }
+
+            // Launcher and close toggle animations
+            const launcher = document.getElementById('aiChatLauncher');
+            const chatBox = document.getElementById('aiChatBox');
+            const closeBtn = document.getElementById('aiChatClose');
+
+            if (launcher && chatBox) {
+                launcher.addEventListener('click', function() {
+                    chatBox.classList.toggle('show');
+                    if (chatBox.classList.contains('show')) {
+                        const body = document.getElementById('aiChatBody');
+                        if (body) body.scrollTop = body.scrollHeight;
+                    }
+                });
+            }
+
+            if (closeBtn && chatBox) {
+                closeBtn.addEventListener('click', function() {
+                    chatBox.classList.remove('show');
+                });
+            }
+
             const toggleBtn = document.getElementById('sidebarToggleBtn');
             const sidebar = document.getElementById('sidebar');
             const backdrop = document.getElementById('sidebarBackdrop');

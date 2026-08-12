@@ -194,6 +194,31 @@ assertTest($save_pay_ok, "Salary::saveMonthlyPayment() registers monthly payout 
 $pay_hist = $salaryModel->getPaymentHistory($new_emp_id);
 assertTest(count($pay_hist) === 1 && $pay_hist[0]['status'] === 'Paid' && floatval($pay_hist[0]['total_earnings']) === 5450.00, "Salary::getPaymentHistory() returns pay slips with complete historical amounts");
 
+// 9. AI Chat Assistant validation tests
+require_once __DIR__ . '/../classes/AIChatAssistant.php';
+
+// Test Employee AIChatAssistant instance
+$emp_ai = new AIChatAssistant($new_emp_id, 'Employee', 'Validation Tester');
+
+// Basic Greeting Test
+$greet_res = $emp_ai->ask("Hello!");
+assertTest(strpos($greet_res, "Validation Tester") !== false, "AIChatAssistant correctly returns personalized greetings");
+
+// Leave Balance Query Test
+$leave_res = $emp_ai->ask("how many leave days do I have left?");
+assertTest(strpos($leave_res, "Casual") !== false, "AIChatAssistant correctly retrieves leave balances in fallback mode");
+
+// Announcements Query Test
+$ann_res = $emp_ai->ask("show me recent announcements");
+assertTest(strpos($ann_res, "Welcome to the New Academic Year!") !== false, "AIChatAssistant correctly returns latest announcements");
+
+// Test Admin AIChatAssistant instance
+$admin_ai = new AIChatAssistant($adminUser['id'], 'Admin', 'Alhassan Mubarak');
+
+// Total Active Employees Query Test
+$active_res = $admin_ai->ask("How many active employees do we have?");
+assertTest(strpos($active_res, "active employees") !== false, "AIChatAssistant Admin correctly lists system wide employee totals");
+
 // Clean Up Temporary Database Objects to prevent bloating
 echo "\n=== CLEANING UP TEMPORARY TESTING ENTITIES ===\n";
 try {
