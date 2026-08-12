@@ -33,17 +33,29 @@ if (!function_exists('loadEnv')) {
 // Load env secrets from repo root
 loadEnv(__DIR__ . '/../.env');
 
-// Check for Gemini API key in env
-$gemini_key = getenv('GEMINI_API_KEY') ?: ($_ENV['GEMINI_API_KEY'] ?? '');
+// Check for NVIDIA API key in env as primary
+$nvidia_key = getenv('NVIDIA_API_KEY') ?: ($_ENV['NVIDIA_API_KEY'] ?? '');
+$nvidia_model = getenv('NVIDIA_MODEL') ?: ($_ENV['NVIDIA_MODEL'] ?? 'nvidia/llama-3.1-nemotron-51b-instruct');
+$nvidia_base_url = getenv('NVIDIA_BASE_URL') ?: ($_ENV['NVIDIA_BASE_URL'] ?? 'https://integrate.api.nvidia.com/v1');
 
-if (!empty($gemini_key)) {
-    define('AI_PROVIDER', 'gemini');
-    define('AI_API_KEY', $gemini_key);
+if (!empty($nvidia_key)) {
+    define('AI_PROVIDER', 'nvidia');
+    define('AI_API_KEY', $nvidia_key);
+    define('AI_MODEL_OVERRIDE', $nvidia_model);
+    define('AI_BASE_URL', $nvidia_base_url);
 } else {
-    define('AI_PROVIDER', 'fallback');
-    define('AI_API_KEY', '');
+    // If not found, check for Gemini
+    $gemini_key = getenv('GEMINI_API_KEY') ?: ($_ENV['GEMINI_API_KEY'] ?? '');
+    if (!empty($gemini_key)) {
+        define('AI_PROVIDER', 'gemini');
+        define('AI_API_KEY', $gemini_key);
+        define('AI_MODEL_OVERRIDE', 'gemini-1.5-flash');
+        define('AI_BASE_URL', '');
+    } else {
+        define('AI_PROVIDER', 'fallback');
+        define('AI_API_KEY', '');
+        define('AI_MODEL_OVERRIDE', '');
+        define('AI_BASE_URL', '');
+    }
 }
-
-// Optional model override
-define('AI_MODEL_OVERRIDE', 'gemini-1.5-flash');
 ?>

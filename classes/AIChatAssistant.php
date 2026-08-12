@@ -159,7 +159,7 @@ class AIChatAssistant {
 
         $assistant_response = "";
 
-        if (($provider === 'gemini' || $provider === 'openai') && !empty($api_key)) {
+        if (($provider === 'nvidia' || $provider === 'gemini' || $provider === 'openai') && !empty($api_key)) {
             $assistant_response = $this->askLLM($question, $provider, $api_key, $conversation_id);
         } else {
             $assistant_response = $this->askFallback($question);
@@ -231,6 +231,7 @@ class AIChatAssistant {
         {
            \"text\": \"Your friendly, professional, and helpful natural-language response.\"
         }
+        When returning a text response for greetings or general assistant introductions, you MUST address the user directly by their User Name: {$this->user_name}.
 
         Do NOT generate raw SQL queries or execute writes. You must only select from the list of approved tools.
         Respond ONLY with valid JSON. No markdown code blocks, no backticks.
@@ -238,17 +239,18 @@ class AIChatAssistant {
 
         try {
             $response_raw = "";
-            if ($provider === 'gemini') {
+            if ($provider === 'nvidia') {
+                $response_raw = $this->callNvidiaAPI($intent_prompt, $api_key, true);
+            } elseif ($provider === 'gemini') {
                 $response_raw = $this->callGeminiAPI($intent_prompt, $api_key, true);
             } else {
                 $response_raw = $this->callOpenAIAPI($intent_prompt, $api_key, true);
             }
 
-            // Clean response blocks
+            // Clean response blocks cleanly with regex
             $response_raw = trim($response_raw);
-            if (strpos($response_raw, '```json') !== false) {
-                $response_raw = str_replace(['```json', '```'], '', $response_raw);
-                $response_raw = trim($response_raw);
+            if (preg_match('/^```(?:json)?\s*([\s\S]*?)\s*```$/i', $response_raw, $matches)) {
+                $response_raw = trim($matches[1]);
             }
 
             $intent = json_decode($response_raw, true);
@@ -260,6 +262,11 @@ class AIChatAssistant {
 
                     // Invoke backend tool safely
                     $tool_output = $this->executeTool($tool_name, $args);
+
+                    // If the tool execution returned an access-denied/unauthorized error, return it directly to the user
+                    if (isset($tool_output['error'])) {
+                        return "Access Denied: You are not authorized to view this information.";
+                    }
 
                     // Ask LLM to translate structured database outputs into pleasant conversational formats
                     $formatting_prompt = "
@@ -277,7 +284,9 @@ class AIChatAssistant {
                     5. Never reveal SQL syntax, raw database tables/columns, or API credentials.
                     ";
 
-                    if ($provider === 'gemini') {
+                    if ($provider === 'nvidia') {
+                        return $this->callNvidiaAPI($formatting_prompt, $api_key, false);
+                    } elseif ($provider === 'gemini') {
                         return $this->callGeminiAPI($formatting_prompt, $api_key, false);
                     } else {
                         return $this->callOpenAIAPI($formatting_prompt, $api_key, false);
@@ -537,10 +546,55 @@ class AIChatAssistant {
     }
 
     /**
+     * API Call to NVIDIA NIM (OpenAI compatible).
+     */
+    private function callNvidiaAPI($prompt, $api_key, $json_mode = false) {
+        $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'nvidia/llama-3.1-nemotron-51b-instruct';
+        $base_url = defined('AI_BASE_URL') && !empty(AI_BASE_URL) ? AI_BASE_URL : 'https://integrate.api.nvidia.com/v1';
+        $url = rtrim($base_url, '/') . '/chat/completions';
+
+        $payload = [
+            'model' => $model,
+            'messages' => [
+                ['role' => 'user', 'content' => $prompt]
+            ],
+            'temperature' => 0.1
+        ];
+
+        if ($json_mode) {
+            $payload['response_format'] = ['type' => 'json_object'];
+        }
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $api_key
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+
+        $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            throw new Exception("CURL Error: " . curl_error($ch));
+        }
+        curl_close($ch);
+
+        $res_data = json_decode($response, true);
+        if (isset($res_data['choices'][0]['message']['content'])) {
+            return $res_data['choices'][0]['message']['content'];
+        }
+
+        // Clean error logging that avoids outputting the raw API key
+        throw new Exception("Invalid response from NVIDIA API. Response payload returned error status.");
+    }
+
+    /**
      * API Call to Gemini.
      */
     private function callGeminiAPI($prompt, $api_key, $json_mode = false) {
-        $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'gemini-1.5-flash';
+        $model = 'gemini-1.5-flash';
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $api_key;
 
         $payload = [
@@ -579,14 +633,14 @@ class AIChatAssistant {
             return $res_data['candidates'][0]['content']['parts'][0]['text'];
         }
 
-        throw new Exception("Invalid response from Gemini API: " . $response);
+        throw new Exception("Invalid response from Gemini API.");
     }
 
     /**
      * API Call to OpenAI.
      */
     private function callOpenAIAPI($prompt, $api_key, $json_mode = false) {
-        $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'gpt-4o-mini';
+        $model = 'gpt-4o-mini';
         $url = "https://api.openai.com/v1/chat/completions";
 
         $payload = [
@@ -622,7 +676,7 @@ class AIChatAssistant {
             return $res_data['choices'][0]['message']['content'];
         }
 
-        throw new Exception("Invalid response from OpenAI API: " . $response);
+        throw new Exception("Invalid response from OpenAI API.");
     }
 
     // ==========================================
