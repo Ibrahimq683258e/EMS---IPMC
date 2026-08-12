@@ -764,9 +764,12 @@ class AIChatAssistant {
             SELECT e.first_name, e.last_name, e.designation
             FROM employees e
             JOIN departments d ON e.department_id = d.id
-            WHERE (d.name LIKE :dept OR d.code LIKE :dept) AND e.status = 'Active'
+            WHERE (d.name LIKE :dept1 OR d.code LIKE :dept2) AND e.status = 'Active'
         ");
-        $stmt->execute(['dept' => "%" . $department . "%"]);
+        $stmt->execute([
+            'dept1' => "%" . $department . "%",
+            'dept2' => "%" . $department . "%"
+        ]);
         return $stmt->fetchAll();
     }
 
