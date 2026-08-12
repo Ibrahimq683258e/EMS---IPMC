@@ -61,7 +61,6 @@ class AIChatAssistant {
         }
 
         if (!$this->verifyConversationOwnership($conversation_id)) {
-            // Log unauthorized attempt securely
             error_log("UNAUTHORIZED ACCESS ATTEMPT: User ID {$this->user_id} tried to load Conversation ID {$conversation_id}");
             return [];
         }
@@ -161,7 +160,7 @@ class AIChatAssistant {
         $assistant_response = "";
 
         if (($provider === 'gemini' || $provider === 'openai') && !empty($api_key)) {
-            $assistant_response = $this->askLLM($question, $provider, $api_key);
+            $assistant_response = $this->askLLM($question, $provider, $api_key, $conversation_id);
         } else {
             $assistant_response = $this->askFallback($question);
         }
@@ -179,18 +178,36 @@ class AIChatAssistant {
     /**
      * Handle LLM-based tool/intent selection and structured raw data formatting.
      */
-    private function askLLM($question, $provider, $api_key) {
+    private function askLLM($question, $provider, $api_key, $conversation_id) {
         $tools = $this->getAvailableTools();
         $tool_list_str = "";
         foreach ($tools as $name => $meta) {
             $tool_list_str .= "- {$name}: {$meta['desc']} (Roles allowed: " . implode(', ', $meta['roles']) . ")\n";
         }
 
+        // Fetch recent messages for context/conversational memory (last 6 messages)
+        $stmt = $this->db->prepare("
+            SELECT role, message
+            FROM chat_messages
+            WHERE conversation_id = :conv_id AND user_id = :user_id
+            ORDER BY created_at DESC LIMIT 6
+        ");
+        $stmt->execute(['conv_id' => (int)$conversation_id, 'user_id' => $this->user_id]);
+        $history_rows = array_reverse($stmt->fetchAll());
+
+        $history_context = "";
+        if (!empty($history_rows)) {
+            foreach ($history_rows as $row) {
+                $role_label = ($row['role'] === 'user') ? 'User' : 'Assistant';
+                $history_context .= "{$role_label}: {$row['message']}\n";
+            }
+        }
+
         // System Prompt to extract user intent / map to tools
         $intent_prompt = "
-        You are the IPMC Tamale Campus EMS AI Router.
-        Analyze the user's input question: \"{$question}\"
-        And map it to one of the approved tool functions if necessary.
+        You are the IPMC Tamale Campus Employee Management System (EMS) AI Assistant.
+        Analyze the current user's prompt: \"{$question}\"
+        And map it to one of our approved tool functions if a database lookup is required.
 
         Available tools:
         {$tool_list_str}
@@ -199,8 +216,11 @@ class AIChatAssistant {
         User Name: {$this->user_name}
         User Role: {$this->user_role}
 
-        Rules:
-        - If the user query maps to one of the available tools, return EXACTLY this JSON format:
+        Conversational History Context:
+        {$history_context}
+
+        System Rules:
+        - If the user query or follow-up maps to one of the available tools, return EXACTLY this JSON format:
         {
            \"tool\": \"tool_name\",
            \"args\": { \"department\": \"value\" }
@@ -212,16 +232,16 @@ class AIChatAssistant {
            \"text\": \"Your friendly, professional, and helpful natural-language response.\"
         }
 
-        Do NOT generate raw SQL queries under any circumstances. You must only select from the list of approved tools.
+        Do NOT generate raw SQL queries or execute writes. You must only select from the list of approved tools.
         Respond ONLY with valid JSON. No markdown code blocks, no backticks.
         ";
 
         try {
             $response_raw = "";
             if ($provider === 'gemini') {
-                $response_raw = $this->callGeminiAPI($intent_prompt, $api_key);
+                $response_raw = $this->callGeminiAPI($intent_prompt, $api_key, true);
             } else {
-                $response_raw = $this->callOpenAIAPI($intent_prompt, $api_key);
+                $response_raw = $this->callOpenAIAPI($intent_prompt, $api_key, true);
             }
 
             // Clean response blocks
@@ -243,23 +263,24 @@ class AIChatAssistant {
 
                     // Ask LLM to translate structured database outputs into pleasant conversational formats
                     $formatting_prompt = "
-                    You are the IPMC Tamale Campus EMS Assistant.
-                    Answering the user query: \"{$question}\"
-                    The real database was safely queried, and returned the following verified data:
+                    You are the IPMC Tamale Campus Employee Management System AI Assistant.
+                    The user asked: \"{$question}\"
+
+                    The secure PHP backend executed the tool \"{$tool_name}\" and returned this verified real-time dataset:
                     " . json_encode($tool_output) . "
 
                     System Rules:
-                    1. Use ONLY the verified data provided above.
-                    2. If the data is empty or indicates no records, state it politely. Do not invent details.
-                    3. Format numbers, dates, lists, and ratings nicely.
+                    1. Use ONLY the verified database data provided above.
+                    2. If the data is empty or indicates no records/error, state it politely. Do not invent or hallucinate details.
+                    3. Format lists, counts, dates, and appraisal ratings nicely and clearly.
                     4. Keep your answer brief, professional, concise, and helpful.
-                    5. Never reveal SQL syntax, raw database columns, or API details.
+                    5. Never reveal SQL syntax, raw database tables/columns, or API credentials.
                     ";
 
                     if ($provider === 'gemini') {
-                        return $this->callGeminiAPI($formatting_prompt, $api_key);
+                        return $this->callGeminiAPI($formatting_prompt, $api_key, false);
                     } else {
-                        return $this->callOpenAIAPI($formatting_prompt, $api_key);
+                        return $this->callOpenAIAPI($formatting_prompt, $api_key, false);
                     }
 
                 } elseif (isset($intent['text'])) {
@@ -518,7 +539,7 @@ class AIChatAssistant {
     /**
      * API Call to Gemini.
      */
-    private function callGeminiAPI($prompt, $api_key) {
+    private function callGeminiAPI($prompt, $api_key, $json_mode = false) {
         $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'gemini-1.5-flash';
         $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $api_key;
 
@@ -531,6 +552,12 @@ class AIChatAssistant {
                 ]
             ]
         ];
+
+        if ($json_mode) {
+            $payload['generationConfig'] = [
+                'responseMimeType' => 'application/json'
+            ];
+        }
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -558,7 +585,7 @@ class AIChatAssistant {
     /**
      * API Call to OpenAI.
      */
-    private function callOpenAIAPI($prompt, $api_key) {
+    private function callOpenAIAPI($prompt, $api_key, $json_mode = false) {
         $model = defined('AI_MODEL_OVERRIDE') && !empty(AI_MODEL_OVERRIDE) ? AI_MODEL_OVERRIDE : 'gpt-4o-mini';
         $url = "https://api.openai.com/v1/chat/completions";
 
@@ -569,6 +596,10 @@ class AIChatAssistant {
             ],
             'temperature' => 0.1
         ];
+
+        if ($json_mode) {
+            $payload['response_format'] = ['type' => 'json_object'];
+        }
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

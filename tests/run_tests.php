@@ -232,9 +232,19 @@ $unauth_tool_res = $emp_ai_A->ask("How many active employees do we have?", $conv
 // It should map to fallback mode general response or fallback secure explanation, and NOT return counts
 assertTest(strpos($unauth_tool_res, "active employees") === false, "CRITICAL PROTECTION: Employee cannot execute HR/Admin specific metrics");
 
+// Test Conversation ID Attack (Employee B tries to read Employee A's conversation ID context directly)
+$unauth_conv_read = $emp_ai_B->verifyConversationOwnership($conv_id_A);
+assertTest($unauth_conv_read === false, "CRITICAL PROTECTION: Employee B cannot claim ownership of Employee A's conversation ID");
+
 // Test Admin AIChatAssistant instance
 $admin_ai = new AIChatAssistant($adminUser['id'], 'Admin', 'Alhassan Mubarak');
 $conv_id_admin = $admin_ai->getActiveConversationId();
+
+// Test User ID Attack (Security boundary of the session)
+// Since $_SESSION is the absolute source of truth on the backend (ai-chat-api.php),
+// we verify that the instance initialized with $new_emp_id strictly blocks fake parameters.
+$direct_verify = $emp_ai_A->verifyConversationOwnership($conv_id_admin);
+assertTest($direct_verify === false, "CRITICAL PROTECTION: Logged-in Employee cannot gain access to Admin's conversation ID");
 
 // Total Active Employees Query Test (Authorized for Admin)
 $active_res = $admin_ai->ask("How many active employees do we have?", $conv_id_admin);

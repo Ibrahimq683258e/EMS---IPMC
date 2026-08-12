@@ -269,3 +269,47 @@
 [Wed Aug 12 16:51:40 2026] 127.0.0.1:36804 Accepted
 [Wed Aug 12 16:51:40 2026] 127.0.0.1:36804 [200]: POST /ai-chat-api.php?action=send
 [Wed Aug 12 16:51:40 2026] 127.0.0.1:36804 Closing
+[Wed Aug 12 18:12:49 2026] 127.0.0.1:33774 Accepted
+[Wed Aug 12 18:12:49 2026] 127.0.0.1:33774 [200]: GET /login.php
+[Wed Aug 12 18:12:49 2026] 127.0.0.1:33774 Closing
+[Wed Aug 12 18:12:51 2026] 127.0.0.1:33788 Accepted
+[Wed Aug 12 18:12:51 2026] 127.0.0.1:33788 [302]: POST /login.php
+[Wed Aug 12 18:12:51 2026] 127.0.0.1:33788 Closing
+[Wed Aug 12 18:12:51 2026] 127.0.0.1:33792 Accepted
+[Wed Aug 12 18:12:51 2026] 127.0.0.1:33792 [200]: GET /dashboard.php
+[Wed Aug 12 18:12:51 2026] 127.0.0.1:33792 Closing
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33808 Accepted
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33812 Accepted
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33808 [200]: GET /css/style.css
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33812 [200]: GET /uploads/default.png
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33808 Closing
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33812 Closing
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33816 Accepted
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33816 [200]: GET /ai-chat-api.php?action=load
+[Wed Aug 12 18:12:52 2026] 127.0.0.1:33816 Closing
+[Wed Aug 12 18:12:55 2026] 127.0.0.1:33828 Accepted
+[Wed Aug 12 18:12:55 2026] LLM Intent Router Exception: Invalid response from Gemini API: {
+  "error": {
+    "code": 400,
+    "message": "API key not valid. Please pass a valid API key.",
+    "status": "INVALID_ARGUMENT",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "API_KEY_INVALID",
+        "domain": "googleapis.com",
+        "metadata": {
+          "service": "generativelanguage.googleapis.com"
+        }
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.LocalizedMessage",
+        "locale": "en-US",
+        "message": "API key not valid. Please pass a valid API key."
+      }
+    ]
+  }
+}
+
+[Wed Aug 12 18:12:55 2026] 127.0.0.1:33828 [200]: POST /ai-chat-api.php?action=send
+[Wed Aug 12 18:12:55 2026] 127.0.0.1:33828 Closing
