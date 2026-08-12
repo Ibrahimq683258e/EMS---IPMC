@@ -334,3 +334,24 @@
 [Wed Aug 12 19:15:20 2026] 127.0.0.1:34856 Accepted
 [Wed Aug 12 19:15:21 2026] 127.0.0.1:34856 [200]: POST /ai-chat-api.php?action=send
 [Wed Aug 12 19:15:21 2026] 127.0.0.1:34856 Closing
+[Wed Aug 12 21:01:14 2026] 127.0.0.1:53602 Accepted
+[Wed Aug 12 21:01:14 2026] 127.0.0.1:53602 [200]: GET /login.php
+[Wed Aug 12 21:01:14 2026] 127.0.0.1:53602 Closing
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41176 Accepted
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41176 [302]: POST /login.php
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41176 Closing
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41190 Accepted
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41190 [200]: GET /dashboard.php
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41190 Closing
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41192 Accepted
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41198 Accepted
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41192 [200]: GET /css/style.css
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41198 [200]: GET /uploads/default.png
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41192 Closing
+[Wed Aug 12 21:01:16 2026] 127.0.0.1:41198 Closing
+[Wed Aug 12 21:01:17 2026] 127.0.0.1:41210 Accepted
+[Wed Aug 12 21:01:17 2026] 127.0.0.1:41210 [200]: GET /ai-chat-api.php?action=load
+[Wed Aug 12 21:01:17 2026] 127.0.0.1:41210 Closing
+[Wed Aug 12 21:01:20 2026] 127.0.0.1:41226 Accepted
+[Wed Aug 12 21:01:21 2026] 127.0.0.1:41226 [200]: POST /ai-chat-api.php?action=send
+[Wed Aug 12 21:01:21 2026] 127.0.0.1:41226 Closing
